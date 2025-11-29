@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MONITORING GFORM MONTHLY</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  body{font-family:Calibri,Arial,Helvetica,sans-serif;background:#f5f7fa;color:#222;margin:0}
+  header{background:#1e5bb8;color:#fff;padding:14px 18px;font-weight:700;text-align:center}
+  .wrap{padding:16px}
+  .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .btn{background:#1e5bb8;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .card{background:#fff;padding:10px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06);min-height:160px;overflow:auto}
+  .item{padding:4px 0;border-bottom:1px solid #eee;font-size:13px}
+  h4{margin:4px 0;padding:6px;border-radius:4px;font-size:14px;color:#000}
+  #cardS1 h4{background:#FFD1DC} /* pastel pink */
+  #cardS2 h4{background:#D1E8FF} /* pastel blue */
+  #cardS3 h4{background:#D1FFD6} /* pastel green */
+  #cardS4 h4{background:#FFF6D1} /* pastel yellow */
+  #cardB1 h4{background:#FFD1DC} 
+  #cardB2 h4{background:#D1E8FF} 
+  #cardB3 h4{background:#D1FFD6} 
+  #cardB4 h4{background:#FFF6D1} 
+  #chartWrap{background:#fff;padding:12px;border-radius:8px;text-align:center;margin-top:16px}
+  canvas{max-width:100%}
+</style>
+</head>
+<body>
+<header>MONITORING GFORM MONTHLY</header>
+<div class="wrap">
+
+  <div class="controls">
+    <button class="btn" id="btnExport">Export Excel</button>
+    <button class="btn" id="btnRefresh">Refresh Now</button>
+    <div style="margin-left:8px;color:#666;font-size:13px">Auto-refresh 10 menit — shows Timestamp, ID Mesin, Nama Lokasi, SEKTOR</div>
+  </div>
+
+  <h3>Sudah Input</h3>
+  <div class="grid4">
+    <div class="card" id="cardS1"><h4>Col 1</h4><div id="sudah1">—</div><div id="countS1" style="margin-top:6px"></div></div>
+    <div class="card" id="cardS2"><h4>Col 2</h4><div id="sudah2">—</div><div id="countS2" style="margin-top:6px"></div></div>
+    <div class="card" id="cardS3"><h4>Col 3</h4><div id="sudah3">—</div><div id="countS3" style="margin-top:6px"></div></div>
+    <div class="card" id="cardS4"><h4>Col 4</h4><div id="sudah4">—</div><div id="countS4" style="margin-top:6px"></div></div>
+  </div>
+
+  <h3 style="margin-top:16px">Belum Input</h3>
+  <div class="grid4">
+    <div class="card" id="cardB1"><h4>Col 1</h4><div id="belum1">—</div><div id="countB1" style="margin-top:6px"></div></div>
+    <div class="card" id="cardB2"><h4>Col 2</h4><div id="belum2">—</div><div id="countB2" style="margin-top:6px"></div></div>
+    <div class="card" id="cardB3"><h4>Col 3</h4><div id="belum3">—</div><div id="countB3" style="margin-top:6px"></div></div>
+    <div class="card" id="cardB4"><h4>Col 4</h4><div id="belum4">—</div><div id="countB4" style="margin-top:6px"></div></div>
+  </div>
+
+  <div id="chartWrap">
+    <h4>Grafik Count Sudah / Belum</h4>
+    <canvas id="chartMonthly" height="150"></canvas>
+  </div>
+</div>
+
+<script>
+const MASTER_CSV = "Data Mesin.csv";
+const FORM_URL = "https://docs.google.com/spreadsheets/d/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/export?format=csv&gid=1674075217";
+
+let masterList=[], formRows=[], chart=null;
+
+function getCol(obj,name){if(!obj) return ""; const target=name.toLowerCase().trim(); for(const k in obj) if(k.toLowerCase().trim()===target) return obj[k]; return "";}
+function safe(v){return v==null?"":String(v).trim();}
+
+async function loadMaster(){
+  return new Promise(resolve=>{
+    Papa.parse(MASTER_CSV,{download:true,header:true,skipEmptyLines:true,
+      complete:r=>{ masterList=Array.isArray(r.data)? r.data.filter(x=>safe(getCol(x,"ID Mesin"))!=="") : []; console.log("master count:",masterList.length); resolve(); },
+      error:e=>{console.warn("failed load master:",e); masterList=[]; resolve(); }
+    });
+  });
+}
+
+async function loadForm(){
+  return new Promise(resolve=>{
+    Papa.parse(FORM_URL,{download:true,header:true,skipEmptyLines:true,
+      complete:r=>{ formRows=Array.isArray(r.data)? r.data : []; console.log("form rows:",formRows.length); resolve(); },
+      error:e=>{console.error("failed load form CSV:",e); formRows=[]; resolve(); }
+    });
+  });
+}
+
+function render(){
+  const sudahCols=[[],[],[],[]];
+  const belumCols=[[],[],[],[]];
+  const sektorCount={sudah:0,belum:0};
+
+  // distribusi ke 4 kolom secara merata
+  function pushCol(arr,item){ const minLen=Math.min(...arr.map(a=>a.length)); for(let i=0;i<arr.length;i++){ if(arr[i].length===minLen){arr[i].push(item); break;} } }
+
+  for(const m of masterList){
+    const id = safe(getCol(m,"ID Mesin"));
+    const sektor = safe(getCol(m,"SEKTOR"))||"—";
+    const namaLokasi = safe(getCol(m,"Nama Lokasi"))||"—";
+
+    const match = formRows.find(r=>safe(getCol(r,"ID Mesin"))===id);
+    if(match){
+      const ts = safe(getCol(match,"Timestamp"))||"—";
+      pushCol(sudahCols,{id,sektor,namaLokasi,timestamp:ts});
+      sektorCount.sudah++;
+    }else{
+      pushCol(belumCols,{id,sektor,namaLokasi});
+      sektorCount.belum++;
+    }
+  }
+
+  for(let i=0;i<4;i++){
+    document.getElementById("sudah"+(i+1)).innerHTML = sudahCols[i].length ? sudahCols[i].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}<br><small>${it.timestamp}</small></div>`).join("") : "<i>Tidak ada data</i>";
+    document.getElementById("countS"+(i+1)).innerText = `Total: ${sudahCols[i].length}`;
+    document.getElementById("belum"+(i+1)).innerHTML = belumCols[i].length ? belumCols[i].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}</div>`).join("") : "<i>Semua mesin terinput</i>";
+    document.getElementById("countB"+(i+1)).innerText = `Total: ${belumCols[i].length}`;
+  }
+
+  // chart
+  const ctx=document.getElementById("chartMonthly").getContext("2d");
+  if(chart) chart.destroy();
+  chart=new Chart(ctx,{
+    type:"pie",
+    data:{labels:["Sudah","Belum"],datasets:[{data:[sektorCount.sudah,sektorCount.belum],backgroundColor:["#1e5bb8","#ff6961"]}]},
+    options:{responsive:true}
+  });
+
+  console.log("render done",sektorCount);
+}
+
+document.getElementById("btnRefresh").addEventListener("click",()=>loadAll());
+document.getElementById("btnExport").addEventListener("click",()=>{
+  const rows=[];
+  for(const m of masterList){
+    const id = safe(getCol(m,"ID Mesin"));
+    const sektor = safe(getCol(m,"SEKTOR"))||"—";
+    const namaLokasi = safe(getCol(m,"Nama Lokasi"))||"—";
+    const match = formRows.find(r=>safe(getCol(r,"ID Mesin"))===id);
+    rows.push({
+      Timestamp: match?safe(getCol(match,"Timestamp")):"—",
+      ID_Mesin:id,
+      Nama_Lokasi:namaLokasi,
+      SEKTOR:sektor
+    });
+  }
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,"Monitoring");
+  XLSX.writeFile(wb,`Monitoring_Monthly_${new Date().toISOString().slice(0,10)}.xlsx`);
+});
+
+async function loadAll(){ await loadMaster(); await loadForm(); render(); }
+loadAll();
+setInterval(loadAll,600000);
+</script>
+</body>
+</html>
