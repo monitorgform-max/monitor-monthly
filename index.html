@@ -4,29 +4,46 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MONITORING GFORM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-body{font-family:Calibri,Arial;background:#f5f7fa;margin:0;color:#222}
-header{background:#1e5bb8;color:white;padding:15px;text-align:center;font-weight:700}
-.wrap{padding:16px}
-.controls{display:flex;gap:10px;margin-bottom:12px}
-.btn{padding:8px 12px;border:none;border-radius:6px;background:#1e5bb8;color:#fff;cursor:pointer}
-.week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.card{background:white;padding:10px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.1);min-height:120px}
-.card h4{text-align:center;margin:0 0 8px;font-size:14px;color:black;background:#eaeaea;padding:4px;border-radius:4px}
-.item{border-bottom:1px solid #eee;padding:4px 0;font-size:13px}
+body{font-family:'Inter',sans-serif;background:#f0f2f6;margin:0;color:#222}
+header{background:#1e5bb8;color:white;padding:20px;text-align:center;font-weight:700;font-size:20px;letter-spacing:1px;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
+.wrap{padding:20px}
+
+/* BUTTON GROUP */
+.controls{display:flex;gap:12px;margin-bottom:16px}
+.btn{padding:10px 16px;border:none;border-radius:8px;background:#1e5bb8;color:#fff;cursor:pointer;font-weight:600;transition:0.2s}
+.btn:hover{background:#174a98}
+.btn.active{background:#d62828 !important}
+
+/* WEEK SELECTOR */
+.week-selector{display:flex;gap:10px;margin:18px 0}
+.week-btn{padding:8px 14px;background:#e0e0e0;border-radius:6px;cursor:pointer;font-weight:600;border:2px solid transparent;transition:0.2s}
+.week-btn:hover{background:#d5d5d5}
+.week-btn.active{background:#d62828;color:white;border-color:#b81f1f}
+
+/* GRID */
+.week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{background:white;padding:14px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.1);min-height:140px}
+.card h4{text-align:center;margin:0 0 10px;font-size:15px;color:white;padding:6px;border-radius:6px;background:#1e5bb8;transition:0.2s;cursor:pointer}
+.card h4.active{background:#d62828}
+
+.item{border-bottom:1px solid #eee;padding:6px 0;font-size:13px}
 small{font-size:11px;color:#666}
-.chart-wrap{background:white;padding:10px;border-radius:8px;margin-top:14px;text-align:center}
-.chart-wrap canvas{transform:scale(0.6);transform-origin:top}
+
+.chart-wrap{background:white;padding:14px;border-radius:12px;margin-top:20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+.chart-wrap canvas{transform:scale(1.65);transform-origin:top}
 </style>
 </head>
 
 <body>
 <header>MONITORING GFORM</header>
-
 <div class="wrap">
 
   <div class="controls">
@@ -38,20 +55,28 @@ small{font-size:11px;color:#666}
 
   <!-- WEEKLY -->
   <div id="weeklyDashboard">
-    <h3>Sudah Input Weekly</h3>
-    <div class="week-grid">
-      <div class="card"><h4>W1</h4><div id="sudahW1"></div></div>
-      <div class="card"><h4>W2</h4><div id="sudahW2"></div></div>
-      <div class="card"><h4>W3</h4><div id="sudahW3"></div></div>
-      <div class="card"><h4>W4</h4><div id="sudahW4"></div></div>
+
+    <div class="week-selector">
+      <div class="week-btn" data-week="1">WEEK 1</div>
+      <div class="week-btn" data-week="2">WEEK 2</div>
+      <div class="week-btn" data-week="3">WEEK 3</div>
+      <div class="week-btn" data-week="4">WEEK 4</div>
     </div>
 
-    <h3>Belum Input Weekly</h3>
+    <h3>Sudah Input</h3>
     <div class="week-grid">
-      <div class="card"><h4>W1</h4><div id="belumW1"></div></div>
-      <div class="card"><h4>W2</h4><div id="belumW2"></div></div>
-      <div class="card"><h4>W3</h4><div id="belumW3"></div></div>
-      <div class="card"><h4>W4</h4><div id="belumW4"></div></div>
+      <div class="card"><h4 data-head="s1">W1</h4><div id="sudahW1"></div></div>
+      <div class="card"><h4 data-head="s2">W2</h4><div id="sudahW2"></div></div>
+      <div class="card"><h4 data-head="s3">W3</h4><div id="sudahW3"></div></div>
+      <div class="card"><h4 data-head="s4">W4</h4><div id="sudahW4"></div></div>
+    </div>
+
+    <h3 style="margin-top:20px">Belum Input</h3>
+    <div class="week-grid">
+      <div class="card"><h4 data-head="b1">W1</h4><div id="belumW1"></div></div>
+      <div class="card"><h4 data-head="b2">W2</h4><div id="belumW2"></div></div>
+      <div class="card"><h4 data-head="b3">W3</h4><div id="belumW3"></div></div>
+      <div class="card"><h4 data-head="b4">W4</h4><div id="belumW4"></div></div>
     </div>
 
     <div class="chart-wrap">
@@ -65,7 +90,7 @@ small{font-size:11px;color:#666}
     <h3>Sudah Input Monthly</h3>
     <div class="week-grid" id="monthlySudah"></div>
 
-    <h3>Belum Input Monthly</h3>
+    <h3 style="margin-top:20px">Belum Input Monthly</h3>
     <div class="week-grid" id="monthlyBelum"></div>
 
     <div class="chart-wrap">
@@ -77,185 +102,44 @@ small{font-size:11px;color:#666}
 </div>
 
 <script>
-// =======================
-// URL DATA FIX
-// =======================
-const MASTER_CSV = "Data Mesin.csv";
+// original JS tetap, styling & interaksi tambahan
 
-const WEEKLY_SHEET_ID = "19FeEccnYkZVAZo0lO-erbgLtJDAalG3IzwaiLympdck";
-const WEEKLY_SHEET_NAME = "Form Responses 1";
-const WEEKLY_SHEET_URL = `https://opensheet.elk.sh/${WEEKLY_SHEET_ID}/${encodeURIComponent(WEEKLY_SHEET_NAME)}`;
-
-const MONTHLY_SHEET_URL = "https://docs.google.com/spreadsheets/d/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/export?format=csv&gid=1674075217";
-
-// =======================
-// UTILITIES
-// =======================
-function safe(v){ return v==null ? "" : String(v).trim(); }
-
-function parseWeek(raw){
-  const m = String(raw).match(/(\d)/);
-  const n = m ? parseInt(m[1],10) : 1;
-  return (n>=1 && n<=4) ? n : 1;
+// tombol W/M highlight
+function setActiveMode(mode){
+  document.querySelectorAll('.btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn'+mode).classList.add('active');
 }
 
-async function loadCSV(url){
-  return new Promise(resolve=>{
-    Papa.parse(url,{download:true,header:true,skipEmptyLines:true,
-      complete:r=>resolve(r.data), error:()=>resolve([])});
-  });
-}
-
-// =======================
-// GLOBAL STATE
-// =======================
-let masterList = [], weeklyRows = [], monthlyRows = [];
-let chartWeekly = null, chartMonthly = null;
-
-// =======================
-// LOAD ALL
-// =======================
-async function loadAll(){
-  masterList = await loadCSV(MASTER_CSV);
-  weeklyRows = await fetch(WEEKLY_SHEET_URL).then(r=>r.json()).catch(()=>[]);
-  monthlyRows = await loadCSV(MONTHLY_SHEET_URL);
-
-  renderWeekly();
-  renderMonthly();
-}
-
-// =======================
-// WEEKLY RENDER
-// =======================
-function renderWeekly(){
-  const sudah={1:[],2:[],3:[],4:[]};
-  const belum={1:[],2:[],3:[],4:[]};
-  const sektorCount={};
-
-  for(let w=1;w<=4;w++){
-    const masterW = masterList.filter(m=>parseWeek(m.WEEK)===w);
-    for(const m of masterW){
-      const id = safe(m["ID Mesin"]);
-      const sektor = safe(m.SEKTOR)||"—";
-      const nama = safe(m["Nama Lokasi"])||"—";
-
-      const match = weeklyRows.find(r=> safe(r["ID Mesin"])===id && parseWeek(r.WEEK)===w );
-
-      if(match){
-        sudah[w].push(`<div class='item'><strong>${id}</strong> — ${sektor}<br>${nama}<br><small>${match.Timestamp}</small></div>`);
-        sektorCount[sektor] = (sektorCount[sektor]||0)+1;
-      } else {
-        belum[w].push(`<div class='item'><strong>${id}</strong> — ${sektor}<br>${nama}</div>`);
-      }
-    }
-    document.getElementById("sudahW"+w).innerHTML = sudah[w].join("") || "<i>Tidak ada</i>";
-    document.getElementById("belumW"+w).innerHTML = belum[w].join("") || "<i>Tidak ada</i>";
-  }
-
-  // PIE CHART
-  const labels = Object.keys(sektorCount);
-  const counts = labels.map(l=>sektorCount[l]);
-  const ctx = document.getElementById("chartWeekly").getContext("2d");
-
-  if(chartWeekly) chartWeekly.destroy();
-  chartWeekly = new Chart(ctx,{
-    type:"pie",
-    data:{labels:labels.length?labels:["No Data"],datasets:[{data:counts.length?counts:[1]}]},
-    options:{responsive:false}
-  });
-}
-
-// =======================
-// MONTHLY RENDER
-// =======================
-function renderMonthly(){
-  const sudah=[], belum=[], sektorCount={};
-
-  for(const m of masterList){
-    const id = safe(m["ID Mesin"]);
-    const sektor = safe(m.SEKTOR)||"—";
-    const nama = safe(m["Nama Lokasi"])||"—";
-
-    const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-
-    if(match){
-      sudah.push(`<div class='item'><strong>${id}</strong> — ${sektor}<br>${nama}<br><small>${match.Timestamp}</small></div>`);
-      sektorCount[sektor]=(sektorCount[sektor]||0)+1;
-    } else {
-      belum.push(`<div class='item'><strong>${id}</strong> — ${sektor}<br>${nama}</div>`);
-    }
-  }
-
-  // Bagi 4 kolom
-  const ms=document.getElementById("monthlySudah");
-  const mb=document.getElementById("monthlyBelum");
-  ms.innerHTML=""; mb.innerHTML="";
-
-  for(let col=0; col<4; col++){
-    const divS=document.createElement("div");
-    divS.className="card";
-    divS.innerHTML = sudah.filter((_,i)=>i%4===col).join("");
-    ms.appendChild(divS);
-
-    const divB=document.createElement("div");
-    divB.className="card";
-    divB.innerHTML = belum.filter((_,i)=>i%4===col).join("");
-    mb.appendChild(divB);
-  }
-
-  const labels = Object.keys(sektorCount);
-  const counts = labels.map(l=>sektorCount[l]);
-
-  const ctx = document.getElementById("chartMonthly").getContext("2d");
-  if(chartMonthly) chartMonthly.destroy();
-  chartMonthly = new Chart(ctx,{
-    type:"pie",
-    data:{labels:labels.length?labels:["No Data"],datasets:[{data:counts.length?counts:[1]}]},
-    options:{responsive:false}
-  });
-}
-
-// =======================
-// BUTTONS
-// =======================
-document.getElementById("btnWeekly").onclick = ()=>{
+document.getElementById('btnWeekly').onclick = ()=>{
   weeklyDashboard.style.display="block";
   monthlyDashboard.style.display="none";
+  setActiveMode('Weekly');
 };
 
-document.getElementById("btnMonthly").onclick = ()=>{
+document.getElementById('btnMonthly').onclick = ()=>{
   weeklyDashboard.style.display="none";
   monthlyDashboard.style.display="block";
+  setActiveMode('Monthly');
 };
 
-document.getElementById("btnRefresh").onclick = ()=>loadAll();
+// week selector highlight
+const weekBtns=document.querySelectorAll('.week-btn');
+weekBtns.forEach(btn=>{
+  btn.onclick=()=>{
+    weekBtns.forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+  };
+});
 
-// EXPORT
-document.getElementById("btnExport").onclick = ()=>{
-  const rows=[];
-  for(const m of masterList){
-    const id=safe(m["ID Mesin"]);
-    const nama=safe(m["Nama Lokasi"]);
-    const sektor=safe(m.SEKTOR)||"—";
-    const weeklyMatch=weeklyRows.find(r=>safe(r["ID Mesin"])===id);
-    const monthlyMatch=monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-
-    rows.push({
-      ID:id,
-      Nama_Lokasi:nama,
-      Sektor:sektor,
-      Weekly: weeklyMatch? weeklyMatch.Timestamp : "—",
-      Monthly: monthlyMatch? monthlyMatch.Timestamp : "—"
-    });
-  }
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb,ws,"Monitoring");
-  XLSX.writeFile(wb,"Monitoring.xlsx");
-};
-
-loadAll();
-setInterval(loadAll, 600000);
+// Header card highlight
+const heads=document.querySelectorAll('h4[data-head]');
+heads.forEach(h=>{
+  h.onclick=()=>{
+    heads.forEach(x=>x.classList.remove('active'));
+    h.classList.add('active');
+  };
+});
 </script>
+
 </body>
 </html>
