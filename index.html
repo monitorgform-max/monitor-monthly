@@ -3,182 +3,251 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MONITORING GFORM WEEKLY & MONTHLY</title>
+<title>MONITORING GFORM DASHBOARD</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  body{font-family:Calibri,Arial,Helvetica,sans-serif;background:#f5f7fa;color:#222;margin:0}
-  header{background:#1e5bb8;color:#fff;padding:14px 18px;font-weight:700;text-align:center}
+  body{font-family:Calibri,Arial,sans-serif;background:#f5f7fa;color:#222;margin:0}
+  header{background:#1e5bb8;color:#fff;padding:14px 18px;font-weight:700}
   .wrap{padding:16px}
   .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
   .btn{background:#1e5bb8;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
+  select{padding:6px;border-radius:6px;border:1px solid #ccc;cursor:pointer}
   .week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .card{background:#fff;padding:10px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06);min-height:160px;overflow:auto}
-  .item{padding:4px 0;border-bottom:1px solid #eee;font-size:13px}
-  small{color:#666;font-size:12px}
-  /* Header warna pastel */
-  #cardW1 h4, #cardBW1 h4{background:#FFD1DC;color:#000;padding:4px;text-align:center;border-radius:4px;}
-  #cardW2 h4, #cardBW2 h4{background:#D1E8FF;color:#000;padding:4px;text-align:center;border-radius:4px;}
-  #cardW3 h4, #cardBW3 h4{background:#D1FFD6;color:#000;padding:4px;text-align:center;border-radius:4px;}
-  #cardW4 h4, #cardBW4 h4{background:#FFF6D1;color:#000;padding:4px;text-align:center;border-radius:4px;}
-  #chartWrap{text-align:center;margin-top:16px;background:#fff;padding:12px;border-radius:8px;}
-  .grid4col{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .card{background:#fff;padding:10px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06);min-height:120px;overflow:auto}
+  .item{padding:6px 0;border-bottom:1px solid #eee;font-size:12px}
+  small{color:#666;font-size:11px}
+  /* Header colors Weekly */
+  #cardW1 h4{background-color:#FFD1DC;color:#000;padding:4px;border-radius:4px;}
+  #cardW2 h4{background-color:#D1E8FF;color:#000;padding:4px;border-radius:4px;}
+  #cardW3 h4{background-color:#D1FFD6;color:#000;padding:4px;border-radius:4px;}
+  #cardW4 h4{background-color:#FFF6D1;color:#000;padding:4px;border-radius:4px;}
+  /* Header colors Monthly */
+  .monthly .card h4{background-color:#FDE2D1;color:#000;padding:4px;border-radius:4px;text-align:center}
+  #chartWrap{background:#fff;padding:12px;border-radius:8px; width:100%; text-align:center;margin-top:16px;}
 </style>
 </head>
 <body>
-<header>MONITORING GFORM WEEKLY & MONTHLY</header>
+<header>MONITORING GFORM DASHBOARD</header>
 <div class="wrap">
   <div class="controls">
     <button class="btn" id="btnExport">Export Excel</button>
     <button class="btn" id="btnRefresh">Refresh Now</button>
-    <div style="margin-left:8px;color:#666;font-size:13px">Auto-refresh 10 menit — shows Timestamp, ID Mesin, Nama Lokasi, WEEK, SEKTOR</div>
+    <div style="margin-left:8px;color:#666;font-size:13px">Auto-refresh 10 menit — menampilkan Timestamp, ID Mesin, Nama Lokasi, WEEK, SEKTOR</div>
+    <select id="viewSelect">
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+    </select>
   </div>
 
-  <h3>Weekly - Sudah Input</h3>
-  <div class="week-grid">
-    <div class="card" id="cardW1"><h4>WEEK 1</h4><div id="sudahW1">—</div><div id="countSW1" style="margin-top:4px"></div></div>
-    <div class="card" id="cardW2"><h4>WEEK 2</h4><div id="sudahW2">—</div><div id="countSW2" style="margin-top:4px"></div></div>
-    <div class="card" id="cardW3"><h4>WEEK 3</h4><div id="sudahW3">—</div><div id="countSW3" style="margin-top:4px"></div></div>
-    <div class="card" id="cardW4"><h4>WEEK 4</h4><div id="sudahW4">—</div><div id="countSW4" style="margin-top:4px"></div></div>
+  <!-- Weekly Grid -->
+  <div id="weeklyWrap">
+    <div class="week-grid">
+      <div class="card" id="cardW1"><h4>WEEK 1</h4><div id="sudahW1">—</div><div id="countSW1" style="margin-top:8px"></div></div>
+      <div class="card" id="cardW2"><h4>WEEK 2</h4><div id="sudahW2">—</div><div id="countSW2" style="margin-top:8px"></div></div>
+      <div class="card" id="cardW3"><h4>WEEK 3</h4><div id="sudahW3">—</div><div id="countSW3" style="margin-top:8px"></div></div>
+      <div class="card" id="cardW4"><h4>WEEK 4</h4><div id="sudahW4">—</div><div id="countSW4" style="margin-top:8px"></div></div>
+    </div>
+
+    <h3 style="margin-top:18px">Belum Terinput</h3>
+    <div class="week-grid" style="margin-bottom:18px">
+      <div class="card"><h4>W1</h4><div id="belumW1">—</div><div id="countBW1"></div></div>
+      <div class="card"><h4>W2</h4><div id="belumW2">—</div><div id="countBW2"></div></div>
+      <div class="card"><h4>W3</h4><div id="belumW3">—</div><div id="countBW3"></div></div>
+      <div class="card"><h4>W4</h4><div id="belumW4">—</div><div id="countBW4"></div></div>
+    </div>
   </div>
 
-  <h3>Weekly - Belum Input</h3>
-  <div class="week-grid">
-    <div class="card" id="cardBW1"><h4>W1</h4><div id="belumW1">—</div><div id="countBW1" style="margin-top:4px"></div></div>
-    <div class="card" id="cardBW2"><h4>W2</h4><div id="belumW2">—</div><div id="countBW2" style="margin-top:4px"></div></div>
-    <div class="card" id="cardBW3"><h4>W3</h4><div id="belumW3">—</div><div id="countBW3" style="margin-top:4px"></div></div>
-    <div class="card" id="cardBW4"><h4>W4</h4><div id="belumW4">—</div><div id="countBW4" style="margin-top:4px"></div></div>
+  <!-- Monthly Grid -->
+  <div id="monthlyWrap" class="monthly" style="display:none;">
+    <h3>Sudah Input</h3>
+    <div class="week-grid" id="monthlySudah"></div>
+    <h3 style="margin-top:12px">Belum Input</h3>
+    <div class="week-grid" id="monthlyBelum"></div>
   </div>
-
-  <h3>Monthly - Sudah Input</h3>
-  <div class="grid4col" id="monthlySdh">—</div>
-
-  <h3>Monthly - Belum Input</h3>
-  <div class="grid4col" id="monthlyBlm">—</div>
 
   <div id="chartWrap">
     <h4>Grafik per SEKTOR</h4>
-    <canvas id="chartSektor" width="300" height="300"></canvas>
+    <div style="display:inline-block; transform: scale(0.5); transform-origin: top center;">
+      <canvas id="chartSektor"></canvas>
+    </div>
   </div>
 </div>
 
 <script>
-/* CONFIG */
 const MASTER_CSV = "Data Mesin.csv";
-const WEEKLY_FORM = "https://docs.google.com/spreadsheets/d/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/export?format=csv&gid=1674075217"; // weekly
-const MONTHLY_FORM = "https://docs.google.com/spreadsheets/d/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/export?format=csv&gid=1674075217"; // monthly
 
-function safe(v){return v==null?"":String(v).trim();}
-function parseWeek(raw){const m=String(raw).match(/(\d)/); const n=m?parseInt(m[1],10):1; return (n>=1&&n<=4)?n:1;}
+// Link sheet baru weekly & monthly (ganti sesuai link lu)
+const SHEET_WEEKLY = "https://opensheet.elk.sh/PUT_LINK_WEEKLY/Form%20Responses%201";
+const SHEET_MONTHLY = "https://opensheet.elk.sh/PUT_LINK_MONTHLY/Form%20Responses%201";
+
+function getCol(obj,name){
+  if(!obj) return "";
+  const target = name.toLowerCase().trim();
+  for(const k in obj) if(k.toLowerCase().trim()===target) return obj[k];
+  return "";
+}
+function safe(v){ return v==null?"":String(v).trim();}
+function parseWeek(raw){ const m=String(raw).match(/(\d)/); const n=m?parseInt(m[1],10):1; return (n>=1&&n<=4)?n:1;}
 
 let masterList=[], weeklyRows=[], monthlyRows=[], chart=null;
+let currentView="weekly";
 
 async function loadMaster(){
   return new Promise(resolve=>{
     Papa.parse(MASTER_CSV,{download:true,header:true,skipEmptyLines:true,
-      complete:r=>{ masterList = Array.isArray(r.data)? r.data.filter(x=>safe(x["ID Mesin"])!=="") : []; console.log("master count:", masterList.length); resolve(); },
+      complete:r=>{ masterList = Array.isArray(r.data)? r.data.filter(x=>safe(getCol(x,"ID Mesin"))!=="") : []; console.log("master count:", masterList.length); resolve(); },
       error:e=>{ console.warn("failed load master:",e); masterList=[]; resolve(); }
     });
   });
 }
 
-async function loadCsv(url){
-  return new Promise(resolve=>{
-    Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:r=>resolve(r.data),error:e=>{console.warn("failed load csv",e); resolve([]);}});
-  });
+async function loadForm(url){
+  try{
+    const res = await fetch(url,{cache:"no-store"});
+    const data = await res.json();
+    if(!Array.isArray(data)) return [];
+    return data;
+  }catch(e){ console.error("failed fetch form:",e); return []; }
 }
 
 function renderWeekly(){
-  const sudah={1:[],2:[],3:[],4:[]}, belum={1:[],2:[],3:[],4:[]}, sektorCount={};
+  const sudah={1:[],2:[],3:[],4:[]};
+  const belum={1:[],2:[],3:[],4:[]};
+  const sektorCount={};
 
   for(let w=1; w<=4; w++){
-    const masterThisWeek = masterList.filter(m=>parseWeek(m["WEEK"])===w);
+    const masterThisWeek = masterList.filter(m=>parseWeek(getCol(m,"WEEK"))===w);
     for(const m of masterThisWeek){
-      const id = safe(m["ID Mesin"]);
-      const sektor = safe(m["SEKTOR"])||"—";
-      const namaLokasi = safe(m["Nama Lokasi"])||"—";
-      const match = weeklyRows.find(r=>safe(r["ID Mesin"])===id && parseWeek(r["WEEK"])===w);
+      const id = safe(getCol(m,"ID Mesin"));
+      const sektorMaster = safe(getCol(m,"SEKTOR"))||"—";
+      const namaLokasiMaster = safe(getCol(m,"Nama Lokasi"))||"—";
+
+      const match = weeklyRows.find(r=>safe(getCol(r,"ID Mesin"))===id && parseWeek(getCol(r,"WEEK"))===w);
+
       if(match){
-        sudah[w].push({id, sektor, namaLokasi, timestamp:safe(match["Timestamp"])||"—"});
-        sektorCount[sektor]=(sektorCount[sektor]||0)+1;
+        sudah[w].push({id,sektor:sektorMaster,namaLokasi:safe(getCol(match,"Nama Lokasi"))||namaLokasiMaster,timestamp:safe(getCol(match,"Timestamp"))||"—",week:`Week ${w}`});
+        sektorCount[sektorMaster]=(sektorCount[sektorMaster]||0)+1;
       }else{
-        belum[w].push({id, sektor, namaLokasi});
+        belum[w].push({id,sektor:sektorMaster,namaLokasi:namaLokasiMaster,timestamp:"—",week:`Week ${w}`});
       }
     }
   }
 
   for(let w=1; w<=4; w++){
-    document.getElementById("sudahW"+w).innerHTML = sudah[w].length?sudah[w].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}<br><small>Week ${w} • ${it.timestamp}</small></div>`).join(""):"<i>Tidak ada data</i>";
-    document.getElementById("belumW"+w).innerHTML = belum[w].length?belum[w].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}</div>`).join(""):"<i>Semua mesin terinput</i>";
+    document.getElementById("sudahW"+w).innerHTML = sudah[w].length
+      ? sudah[w].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}<br><small>${it.week} • ${it.timestamp}</small></div>`).join("")
+      : "<i>Tidak ada data</i>";
+    document.getElementById("belumW"+w).innerHTML = belum[w].length
+      ? belum[w].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}</div>`).join("")
+      : "<i>Semua mesin terinput</i>";
     document.getElementById("countSW"+w).innerText = `Total: ${sudah[w].length} mesin`;
     document.getElementById("countBW"+w).innerText = `Total: ${belum[w].length} mesin`;
   }
 
+  renderPieChart(sektorCount);
+}
+
+function renderMonthly(){
+  const sudahArr=[], belumArr=[];
+  const sektorCount={};
+
+  for(const m of masterList){
+    const id = safe(getCol(m,"ID Mesin"));
+    const sektorMaster = safe(getCol(m,"SEKTOR"))||"—";
+    const namaLokasiMaster = safe(getCol(m,"Nama Lokasi"))||"—";
+
+    const match = monthlyRows.find(r=>safe(getCol(r,"ID Mesin"))===id);
+
+    if(match){
+      sudahArr.push({id,sektor:sektorMaster,namaLokasi:namaLokasiMaster,timestamp:safe(getCol(match,"Timestamp"))||"—"});
+      sektorCount[sektorMaster]=(sektorCount[sektorMaster]||0)+1;
+    }else{
+      belumArr.push({id,sektor:sektorMaster,namaLokasi:namaLokasiMaster});
+    }
+  }
+
+  // Render 4 kolom
+  const col = 4;
+  const sudahWrap = document.getElementById("monthlySudah");
+  const belumWrap = document.getElementById("monthlyBelum");
+  sudahWrap.innerHTML=""; belumWrap.innerHTML="";
+  for(let i=0;i<col;i++){
+    const sDiv = document.createElement("div"); sDiv.className="card";
+    const slice = sudahArr.slice(i*sudahArr.length/col,(i+1)*sudahArr.length/col);
+    sDiv.innerHTML = `<h4>Sudah</h4>`+slice.map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}<br><small>${it.timestamp}</small></div>`).join("");
+    jáWrap.appendChild(sDiv);
+  }
+  for(let i=0;i<col;i++){
+    const bDiv = document.createElement("div"); bDiv.className="card";
+    const slice = belumArr.slice(i*belumArr.length/col,(i+1)*belumArr.length/col);
+    bDiv.innerHTML = `<h4>Belum</h4>`+slice.map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}</div>`).join("");
+    belumWrap.appendChild(bDiv);
+  }
+
+  renderPieChart(sektorCount);
+}
+
+function renderPieChart(sektorCount){
   const labels = Object.keys(sektorCount);
   const counts = labels.map(l=>sektorCount[l]);
   const ctx = document.getElementById("chartSektor").getContext("2d");
   if(chart) chart.destroy();
-  chart = new Chart(ctx,{type:"pie",data:{labels:labels.length?labels:["No Data"],datasets:[{data:counts.length?counts:[1]}]},options:{responsive:false}});
+  chart = new Chart(ctx,{
+    type:"pie",
+    data:{labels: labels.length?labels:["No Data"], datasets:[{data: counts.length?counts:[1]}]},
+    options:{responsive:false}
+  });
 }
 
-function renderMonthly(){
-  const sudah=[], belum=[], sektorCount={};
-
-  for(const m of masterList){
-    const id = safe(m["ID Mesin"]);
-    const sektor = safe(m["SEKTOR"])||"—";
-    const namaLokasi = safe(m["Nama Lokasi"])||"—";
-    const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-    if(match){
-      sudah.push({id,sektor,namaLokasi,timestamp:safe(match["Timestamp"])||"—"});
-      sektorCount[sektor]=(sektorCount[sektor]||0)+1;
-    }else{
-      belum.push({id,sektor,namaLokasi});
-    }
+async function loadAll(){
+  await loadMaster();
+  if(currentView==="weekly"){
+    weeklyRows = await loadForm(SHEET_WEEKLY);
+    document.getElementById("weeklyWrap").style.display="block";
+    document.getElementById("monthlyWrap").style.display="none";
+    renderWeekly();
+  }else{
+    monthlyRows = await loadForm(SHEET_MONTHLY);
+    document.getElementById("weeklyWrap").style.display="none";
+    document.getElementById("monthlyWrap").style.display="block";
+    renderMonthly();
   }
-
-  const gridSdh = document.getElementById("monthlySdh");
-  const gridBlm = document.getElementById("monthlyBlm");
-  gridSdh.innerHTML = sudah.length?sudah.map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}<br><small>${it.timestamp}</small></div>`).join(""):"<i>Tidak ada data</i>";
-  gridBlm.innerHTML = belum.length?belum.map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}</div>`).join(""):"<i>Semua mesin terinput</i>";
 }
 
 document.getElementById("btnRefresh").addEventListener("click",()=>loadAll());
+document.getElementById("viewSelect").addEventListener("change",e=>{currentView=e.target.value; loadAll();});
+
 document.getElementById("btnExport").addEventListener("click",()=>{
-  const rows=[];
-  for(let w=1; w<=4; w++){
-    const masterThisWeek = masterList.filter(m=>parseWeek(m["WEEK"])===w);
-    for(const m of masterThisWeek){
-      const id = safe(m["ID Mesin"]);
-      const sektor = safe(m["SEKTOR"])||"—";
-      const namaLokasi = safe(m["Nama Lokasi"])||"—";
-      const match = weeklyRows.find(r=>safe(r["ID Mesin"])===id && parseWeek(r["WEEK"])===w);
-      if(match){ rows.push({Timestamp:safe(match["Timestamp"])||"—",ID_Mesin:id,Nama_Lokasi:safe(match["Nama Lokasi"])||namaLokasi,WEEK:`Week ${w}`,SEKTOR:sektor}); }
-      else{ rows.push({Timestamp:"—",ID_Mesin:id,Nama_Lokasi:namaLokasi,WEEK:`Week ${w}`,SEKTOR:sektor}); }
+  const rows=[], dataArr=(currentView==="weekly"?weeklyRows:monthlyRows);
+  if(currentView==="weekly"){
+    for(let w=1; w<=4; w++){
+      const masterThisWeek = masterList.filter(m=>parseWeek(getCol(m,"WEEK"))===w);
+      for(const m of masterThisWeek){
+        const id = safe(getCol(m,"ID Mesin"));
+        const sektorMaster = safe(getCol(m,"SEKTOR"))||"—";
+        const namaLokasiMaster = safe(getCol(m,"Nama Lokasi"))||"—";
+        const match = weeklyRows.find(r=>safe(getCol(r,"ID Mesin"))===id && parseWeek(getCol(r,"WEEK"))===w);
+        if(match) rows.push({Timestamp:safe(getCol(match,"Timestamp"))||"—",ID_Mesin:id,Nama_Lokasi:safe(getCol(match,"Nama Lokasi"))||namaLokasiMaster,WEEK:`Week ${w}`,SEKTOR:sektorMaster});
+        else rows.push({Timestamp:"—",ID_Mesin:id,Nama_Lokasi:namaLokasiMaster,WEEK:`Week ${w}`,SEKTOR:sektorMaster});
+      }
     }
-  }
-  for(const m of masterList){
-    const id = safe(m["ID Mesin"]);
-    const sektor = safe(m["SEKTOR"])||"—";
-    const namaLokasi = safe(m["Nama Lokasi"])||"—";
-    const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-    if(match){ rows.push({Timestamp:safe(match["Timestamp"])||"—",ID_Mesin:id,Nama_Lokasi:namaLokasi,WEEK:"Monthly",SEKTOR:sektor}); }
-    else{ rows.push({Timestamp:"—",ID_Mesin:id,Nama_Lokasi:namaLokasi,WEEK:"Monthly",SEKTOR:sektor}); }
+  }else{
+    for(const m of masterList){
+      const id = safe(getCol(m,"ID Mesin"));
+      const sektorMaster = safe(getCol(m,"SEKTOR"))||"—";
+      const namaLokasiMaster = safe(getCol(m,"Nama Lokasi"))||"—";
+      const match = monthlyRows.find(r=>safe(getCol(r,"ID Mesin"))===id);
+      if(match) rows.push({Timestamp:safe(getCol(match,"Timestamp"))||"—",ID_Mesin:id,Nama_Lokasi:namaLokasiMaster,SEKTOR:sektorMaster});
+      else rows.push({Timestamp:"—",ID_Mesin:id,Nama_Lokasi:namaLokasiMaster,SEKTOR:sektorMaster});
+    }
   }
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb,ws,"Monitoring");
   XLSX.writeFile(wb,`Monitoring_${new Date().toISOString().slice(0,10)}.xlsx`);
 });
-
-async function loadAll(){
-  await loadMaster();
-  weeklyRows = await loadCsv(WEEKLY_FORM);
-  monthlyRows = await loadCsv(MONTHLY_FORM);
-  renderWeekly();
-  renderMonthly();
-}
 
 loadAll();
 setInterval(loadAll,600000);
