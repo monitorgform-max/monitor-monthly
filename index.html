@@ -302,28 +302,66 @@ function renderWeekly(w){
 // Render Monthly
 // ------------------
 function renderMonthly(){
-  function chunkInto(arr,n){ const out=Array.from({length:n},()=>[]); if(arr.length===0) return out; const base=Math.floor(arr.length/n), rem=arr.length % n; let idx=0; for(let i=0;i<n;i++){ const size=base+(i<rem?1:0); out[i]=arr.slice(idx,idx+size); idx+=size;} return out; }
+  function chunkInto(arr,n){ 
+    const out=Array.from({length:n},()=>[]); 
+    if(arr.length===0) return out; 
+    const base=Math.floor(arr.length/n), rem=arr.length % n; 
+    let idx=0; 
+    for(let i=0;i<n;i++){ 
+      const size=base+(i<rem?1:0); 
+      out[i]=arr.slice(idx,idx+size); 
+      idx+=size;
+    } 
+    return out; 
+  }
 
   const sudah=[], belum=[], sektorCount={};
   masterMonthly.forEach(m=>{
     const id = safe(m["ID Mesin"]);
+    const nama = safe(m["Nama Lokasi"])||"—";
+    const sektor = safe(m.SEKTOR)||"—";
     const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-    if(match){ sudah.push({id,sektor:safe(m.SEKTOR)||"—"}); sektorCount[safe(m.SEKTOR)||"—"]=(sektorCount[safe(m.SEKTOR)||"—"]||0)+1; } 
-    else belum.push({id,sektor:safe(m.SEKTOR)||"—"});
+    if(match){ 
+      sudah.push({id, nama, sektor, ts: safe(match.Timestamp)||"—"}); 
+      sektorCount[sektor] = (sektorCount[sektor]||0)+1; 
+    } else {
+      belum.push({id, nama, sektor});
+    }
   });
 
   const colsSudah = chunkInto(sudah,4);
   const colsBelum = chunkInto(belum,4);
 
-  let html="<h3>SUDAH</h3><div class='week-grid'>"+colsSudah.map(col=>`<div class='card'>${col.map(c=>c.id).join("<br>")||"—"}</div>`).join("")+"</div>";
-  html+="<h3>BELUM</h3><div class='week-grid'>"+colsBelum.map(col=>`<div class='card'>${col.map(c=>c.id).join("<br>")||"—"}</div>`).join("")+"</div>";
+  let html="<h3>Sudah Input: "+sudah.length+" mesin</h3>";
+  html += "<div class='week-grid'>" + colsSudah.map(col=>`<div class='monthly-card sudah'>` +
+              col.map(c=>`<div class="item"><strong>${c.id}</strong> — ${c.sektor}<br>${c.nama}<br>
+                         <small>${c.ts}</small>
+                         <span class="tooltip">Timestamp: ${c.ts}</span></div>`).join("") +
+           `</div>`).join("") + "</div>";
+
+  html += "<h3>Belum Input: "+belum.length+" mesin</h3>";
+  html += "<div class='week-grid'>" + colsBelum.map(col=>`<div class='monthly-card belum'>` +
+              col.map(c=>`<div class="item"><strong>${c.id}</strong> — ${c.sektor}<br>${c.nama}
+                         <span class="tooltip">Belum input</span></div>`).join("") +
+           `</div>`).join("") + "</div>";
+
+  // Pie chart
   html+="<div class='chart-wrap'><h4>Grafik Monthly</h4><canvas id='chartMonthly'></canvas></div>";
+
   dataDisplay.innerHTML = html;
 
   const ctx = document.getElementById("chartMonthly").getContext("2d");
   if(chartMonthly) chartMonthly.destroy();
-  chartMonthly = new Chart(ctx,{ type:"pie", data:{ labels:Object.keys(sektorCount).length?Object.keys(sektorCount):["No Data"], datasets:[{data:Object.values(sektorCount).length?Object.values(sektorCount):[1]}] }, options:{responsive:false}});
+  chartMonthly = new Chart(ctx,{
+    type:"pie",
+    data:{
+      labels: Object.keys(sektorCount).length? Object.keys(sektorCount):["No Data"],
+      datasets:[{data:Object.values(sektorCount).length? Object.values(sektorCount):[1]}]
+    },
+    options:{responsive:true, maintainAspectRatio:false}
+  });
 }
+
   
 // ------------------
 // Buttons logic
@@ -372,6 +410,7 @@ loadAll();
 
 </body>
 </html>
+
 
 
 
