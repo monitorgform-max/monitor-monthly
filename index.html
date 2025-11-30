@@ -35,26 +35,13 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
   padding:6px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-
 .card:hover {
   transform: translateY(-3px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+.card.sudah { background:#d4edda; }
+.card.belum { background:#f8d7da; }
 
-.card.sudah { background:#d4edda; }   /* hijau muda */
-.card.belum { background:#f8d7da; }  /* merah muda */
-.item { border-bottom:1px solid #eee; padding:4px 0; font-size:13px; }
-.item {
-  border-bottom:1px solid #eee;
-  padding:4px 0;
-  font-size:13px;
-  transition: background 0.15s ease;
-}
-
-.item:hover {
-  background: rgba(0,0,0,0.05); /* highlight ringan saat hover */
-  padding-left: 4px; /* efek sliding kecil */
-}
 .item {
   border-bottom:1px solid #eee;
   padding:4px 0;
@@ -63,23 +50,18 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
   cursor: default;
   transition: background 0.15s ease, padding-left 0.15s ease;
 }
+.item:hover { background: rgba(0,0,0,0.05); padding-left:4px; }
 
-.item:hover {
-  background: rgba(0,0,0,0.05);
-  padding-left:4px;
-}
-
-/* Tooltip container */
+/* Tooltip */
 .item .tooltip {
   visibility: hidden;
-  background: rgba(0,0,0,0.75);
   color: #fff;
   text-align: center;
   border-radius: 4px;
   padding: 2px 6px;
   position: absolute;
   z-index: 10;
-  bottom: 125%; /* di atas item */
+  bottom: 125%;
   left: 50%;
   transform: translateX(-50%);
   font-size: 11px;
@@ -87,24 +69,20 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
   opacity: 0;
   transition: opacity 0.15s ease;
 }
-
-/* Tooltip arrow */
+.card.sudah .tooltip { background: #28a745; }
+.card.belum .tooltip { background: #dc3545; }
 .item .tooltip::after {
   content: "";
   position: absolute;
-  top: 100%; /* di bawah tooltip */
+  top: 100%;
   left: 50%;
   transform: translateX(-50%);
   border-width: 5px;
   border-style: solid;
-  border-color: rgba(0,0,0,0.75) transparent transparent transparent;
 }
-
-/* Show tooltip on hover */
-.item:hover .tooltip {
-  visibility: visible;
-  opacity: 1;
-}
+.card.sudah .tooltip::after { border-color: #28a745 transparent transparent transparent; }
+.card.belum .tooltip::after { border-color: #dc3545 transparent transparent transparent; }
+.item:hover .tooltip { visibility: visible; opacity: 1; }
 </style>
 </head>
 <body>
@@ -216,26 +194,29 @@ function renderWeekly(w){
     return out;
   }
 
-  // grid SUDAH
+  // GRID SUDAH
   let html = `<h3>Sudah Input: ${sudahList.length} mesin</h3>`;
   const colsSudah = chunkInto(sudahList);
   html += `<div class="week-grid">` + colsSudah.map(col=>{
-    return `<div class="card sudah">` + col.map(m=>
-  `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}<br>
-  <small>${safe(weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"]))?.Timestamp)||"—"}</small>
-  <span class="tooltip">Timestamp: ${safe(weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"]))?.Timestamp)||"—"}</span>
-  </div>`
-).join("") + `</div>`;
+    return `<div class="card sudah">` + col.map(m=>{
+      const ts = safe((weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"])) || {}).Timestamp) || "—";
+      return `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}<br>
+              <small>${ts}</small>
+              <span class="tooltip">Timestamp: ${ts}</span>
+              </div>`;
+    }).join("") + `</div>`;
+  }).join("") + `</div>`;
 
-  // grid BELUM
+  // GRID BELUM
   html += `<h3>Belum Input: ${belumList.length} mesin</h3>`;
   const colsBelum = chunkInto(belumList);
   html += `<div class="week-grid">` + colsBelum.map(col=>{
-    return `<div class="card belum">` + col.map(m=>
-  `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}
-  <span class="tooltip">Belum input</span>
-  </div>`
-).join("") + `</div>`;
+    return `<div class="card belum">` + col.map(m=>{
+      return `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}
+              <span class="tooltip">Belum input</span>
+              </div>`;
+    }).join("") + `</div>`;
+  }).join("") + `</div>`;
   
   // PIE CHART Weekly
   html += "<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>";
@@ -335,4 +316,5 @@ loadAll();
 
 </body>
 </html>
+
 
