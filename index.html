@@ -81,6 +81,7 @@ small{font-size:11px;color:#666}
 // URL DATA FIX
 // =======================
 const MASTER_CSV = "Data Mesin.csv";
+const MASTER_MONTHLY_CSV = "Data Mesin Monthly.csv";  // ← CSV baru khusus monthly
 
 const WEEKLY_SHEET_ID = "19FeEccnYkZVAZo0lO-erbgLtJDAalG3IzwaiLympdck";
 const WEEKLY_SHEET_NAME = "Form Responses 1";
@@ -88,6 +89,8 @@ const WEEKLY_SHEET_URL = `https://opensheet.elk.sh/${WEEKLY_SHEET_ID}/${encodeUR
 
 const MONTHLY_SHEET_URL = "https://docs.google.com/spreadsheets/d/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/export?format=csv&gid=1674075217";
 
+let masterList = [];
+let monthlyRows = [];
 // =======================
 // UTILITIES
 // =======================
@@ -115,6 +118,29 @@ let chartWeekly = null, chartMonthly = null;
 // =======================
 // LOAD ALL
 // =======================
+/* ------------------------------------------------------
+   LOAD MONTHLY MASTER CSV (100 mesin saja)
+-------------------------------------------------------*/
+function loadMonthly() {
+    document.getElementById("status").innerHTML = "Loading data…";
+
+    Papa.parse(MASTER_MONTHLY_CSV, {
+        download: true,
+        header: true,
+        complete: function (res) {
+            masterList = res.data.filter(r => r["MACHINE ID"]);
+
+            Papa.parse(MONTHLY_FORM_URL, {
+                download: true,
+                header: true,
+                complete: function (res2) {
+                    monthlyRows = res2.data;
+                    renderMonthly();
+                }
+            });
+        }
+    });
+}  
 async function loadAll(){
   masterList = await loadCSV(MASTER_CSV);
   weeklyRows = await fetch(WEEKLY_SHEET_URL).then(r=>r.json()).catch(()=>[]);
@@ -186,90 +212,60 @@ function getLatestPerID(rows){
   return Object.values(map);
 }
 
-// --- REPLACE THIS FUNCTION IN YOUR HTML ---
-function renderMonthly(){
-  console.log("renderMonthly() start --- masterList, monthlyRows lengths:", masterList.length, monthlyRows.length);
+/* ------------------------------------------------------
+   RENDER MONTHLY — SPLIT PASTI 4 KOLOM (25/25/25/25)
+-------------------------------------------------------*/
+function renderMonthly() {
 
-  const sudahList = [], belumList = [], sektorCount = {};
+    const sudah = [];
+    const belum = [];
 
-  // kumpulkan sudah / belum dari masterList (hanya sekali)
-  for(const m of masterList){
-    const id = safe(m["ID Mesin"]);
-    if(!id) continue; // skip kosong
-    const sektor = safe(m.SEKTOR) || "—";
-    const nama  = safe(m["Nama Lokasi"]) || "—";
+    // proses setiap mesin master
+    masterList.forEach(m => {
+        const id = (m["MACHINE ID"] || "").trim();
 
-    // cari di monthlyRows (monthlyRows harus array dari CSV parsing)
-    const match = Array.isArray(monthlyRows) ? monthlyRows.find(r => safe(r["ID Mesin"]) === id) : null;
+        const found = monthlyRows.find(r => (r["MACHINE ID"] || "").trim() === id);
 
-    if(match){
-      sudahList.push({ id, sektor, nama, timestamp: safe(match.Timestamp) || "—" });
-      sektorCount[sektor] = (sektorCount[sektor] || 0) + 1;
-    } else {
-      belumList.push({ id, sektor, nama });
-    }
-  }
+        if (found) {
+            sudah.push(id);
+        } else {
+            belum.push(id);
+        }
+    });
 
-  console.log("collected sudah/ belum counts:", {sudah: sudahList.length, belum: belumList.length});
+    // pastikan jumlah tetap konsisten (100 mesin)
+    const chunk = arr => {
+        const size = Math.ceil(arr.length / 4);
+        return [
+            arr.slice(0, size),
+            arr.slice(size, size * 2),
+            arr.slice(size * 2, size * 3),
+            arr.slice(size * 3, size * 4)
+        ];
+    };
 
-  // helper: bagi array menjadi n kolom seimbang
-  function chunkInto(arr, n){
-    const out = Array.from({length: n}, () => []);
-    if(arr.length === 0) return out;
-    const base = Math.floor(arr.length / n);
-    const rem  = arr.length % n;
-    let idx = 0;
-    for(let i=0;i<n;i++){
-      const size = base + (i < rem ? 1 : 0);
-      out[i] = arr.slice(idx, idx + size);
-      idx += size;
-    }
-    return out;
-  }
+    const colsSudah = chunk(sudah);
+    const colsBelum = chunk(belum);
 
-  const colsSudah = chunkInto(sudahList, 4);
-  const colsBelum = chunkInto(belumList, 4);
+    // render helper
+    const fill = (id, list) => {
+        document.getElementById(id).innerHTML = list
+            .map(i => `<div class="item">${i}</div>`).join("");
+    };
 
-  // debug: log sizes per column
-  console.log("colsSudah sizes:", colsSudah.map(c=>c.length));
-  console.log("colsBelum sizes:", colsBelum.map(c=>c.length));
+    fill("col1_sudah", colsSudah[0]);
+    fill("col2_sudah", colsSudah[1]);
+    fill("col3_sudah", colsSudah[2]);
+    fill("col4_sudah", colsSudah[3]);
 
-  // render: HAPUS isinya dulu lalu append 4 cards each
-  const monthlySudah = document.getElementById("monthlySudah");
-  const monthlyBelum = document.getElementById("monthlyBelum");
-  if(!monthlySudah || !monthlyBelum){
-    console.error("monthly containers not found (monthlySudah/monthlyBelum). Check HTML IDs.");
-    return;
-  }
-  monthlySudah.innerHTML = "";
-  monthlyBelum.innerHTML = "";
+    fill("col1_belum", colsBelum[0]);
+    fill("col2_belum", colsBelum[1]);
+    fill("col3_belum", colsBelum[2]);
+    fill("col4_belum", colsBelum[3]);
 
-  for(let i=0;i<4;i++){
-    // SUDAH
-    const divS = document.createElement("div");
-    divS.className = "card";
-    if(colsSudah[i] && colsSudah[i].length){
-      divS.innerHTML = colsSudah[i].map(it => 
-        `<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.nama}<br><small>${it.timestamp}</small></div>`
-      ).join("");
-    } else {
-      divS.innerHTML = "<i>—</i>";
-    }
-    monthlySudah.appendChild(divS);
-
-    // BELUM
-    const divB = document.createElement("div");
-    divB.className = "card";
-    if(colsBelum[i] && colsBelum[i].length){
-      divB.innerHTML = colsBelum[i].map(it =>
-        `<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.nama}</div>`
-      ).join("");
-    } else {
-      divB.innerHTML = "<i>—</i>";
-    }
-    monthlyBelum.appendChild(divB);
-  }
-
+    document.getElementById("status").innerHTML =
+        `SUDAH: ${sudah.length} • BELUM: ${belum.length}`;
+}
   // PIE CHART update (monthly)
   const labels = Object.keys(sektorCount);
   const counts = labels.map(l => sektorCount[l]);
@@ -334,6 +330,7 @@ setInterval(loadAll, 600000);
 </script>
 </body>
 </html>
+
 
 
 
