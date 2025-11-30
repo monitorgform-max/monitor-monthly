@@ -11,20 +11,100 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-body { font-family: Arial, sans-serif; background:#f5f7fa; margin:0; padding:0; color:#222; }
-header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-size:20px; font-weight:bold; }
-.wrap { padding:16px; }
-.button-row { display:flex; gap:10px; margin-bottom:12px; }
+body { font-family: Arial, sans-serif; margin:0; background:#f5f7fa; color:#222; }
+header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-size:20px; font-weight:bold; position:fixed; top:0; left:0; right:0; z-index:1000; }
+.wrap { padding:16px; padding-top:90px; /* space for fixed header + buttons */ }
+.button-row { display:flex; gap:10px; margin-bottom:12px; position:fixed; top:60px; left:0; right:0; padding:0 16px; background:#f5f7fa; z-index:999; }
 .btn { padding:8px 16px; border:none; border-radius:6px; background:#1e5bb8; color:white; cursor:pointer; font-weight:bold; }
 .btn.active { background:red; }
-.week-row { display:flex; gap:8px; margin-bottom:12px; display:none; }
+.week-row { display:flex; gap:8px; margin-bottom:12px; display:none; position:fixed; top:105px; left:0; right:0; padding:0 16px; background:#f5f7fa; z-index:998; }
 .week-btn { padding:6px 12px; border:none; border-radius:6px; background:#666; color:white; cursor:pointer; font-weight:bold; }
 .week-btn.active { background:red; }
+#dataDisplay { margin-top:150px; overflow-y:auto; max-height:calc(100vh - 150px); padding-bottom:20px; }
 .card { background:white; padding:10px; border-radius:8px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
 .week-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
 .item { border-bottom:1px solid #eee; padding:4px 0; font-size:13px; }
 .chart-wrap { background:white; padding:10px; border-radius:8px; margin-top:14px; text-align:center; }
 .chart-wrap canvas { transform:scale(0.6); transform-origin:top; }
+.card.sudah { background:#d4edda; }   /* hijau muda */
+.card.belum { background:#f8d7da; }  /* merah muda */
+.card h4 { margin:0 0 8px; font-size:14px; color:black; background:#eaeaea; padding:4px; border-radius:4px; }
+.item { border-bottom:1px solid #eee; padding:4px 0; font-size:13px; }
+.card {
+  border-radius:8px;
+  padding:6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card.sudah { background:#d4edda; }   /* hijau muda */
+.card.belum { background:#f8d7da; }  /* merah muda */
+.item { border-bottom:1px solid #eee; padding:4px 0; font-size:13px; }
+.item {
+  border-bottom:1px solid #eee;
+  padding:4px 0;
+  font-size:13px;
+  transition: background 0.15s ease;
+}
+
+.item:hover {
+  background: rgba(0,0,0,0.05); /* highlight ringan saat hover */
+  padding-left: 4px; /* efek sliding kecil */
+}
+.item {
+  border-bottom:1px solid #eee;
+  padding:4px 0;
+  font-size:13px;
+  position: relative;
+  cursor: default;
+  transition: background 0.15s ease, padding-left 0.15s ease;
+}
+
+.item:hover {
+  background: rgba(0,0,0,0.05);
+  padding-left:4px;
+}
+
+/* Tooltip container */
+.item .tooltip {
+  visibility: hidden;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 2px 6px;
+  position: absolute;
+  z-index: 10;
+  bottom: 125%; /* di atas item */
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Tooltip arrow */
+.item .tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%; /* di bawah tooltip */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0,0,0,0.75) transparent transparent transparent;
+}
+
+/* Show tooltip on hover */
+.item:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
 </style>
 </head>
 <body>
@@ -110,20 +190,77 @@ async function loadAll(){
 // ------------------
 function renderWeekly(w){
   const list = masterWeekly.filter(m=>parseWeek(m.WEEK)===parseInt(w));
-  dataDisplay.innerHTML = list.length? list.map(m=>`<div class="card"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}<br><small>${safe(weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"]))?.Timestamp)||"—"}</small></div>`).join("") : "<div class='card'>Tidak ada data</div>";
+  const sudahList = [];
+  const belumList = [];
+
+  list.forEach(m=>{
+    const id = safe(m["ID Mesin"]);
+    const match = weeklyRows.find(r=>safe(r["ID Mesin"])===id);
+    if(match) sudahList.push(m);
+    else belumList.push(m);
+  });
+
+  // helper split array menjadi 4 kolom
+  function chunkInto(arr){
+    const n=4;
+    const out = Array.from({length:n}, ()=>[]);
+    if(arr.length===0) return out;
+    const base = Math.floor(arr.length/n);
+    const rem  = arr.length%n;
+    let idx = 0;
+    for(let i=0;i<n;i++){
+      const size = base + (i<rem?1:0);
+      out[i] = arr.slice(idx, idx+size);
+      idx += size;
+    }
+    return out;
+  }
+
+  // grid SUDAH
+  let html = `<h3>Sudah Input: ${sudahList.length} mesin</h3>`;
+  const colsSudah = chunkInto(sudahList);
+  html += `<div class="week-grid">` + colsSudah.map(col=>{
+    return `<div class="card sudah">` + col.map(m=>
+  `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}<br>
+  <small>${safe(weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"]))?.Timestamp)||"—"}</small>
+  <span class="tooltip">Timestamp: ${safe(weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"]))?.Timestamp)||"—"}</span>
+  </div>`
+).join("") + `</div>`;
+
+  // grid BELUM
+  html += `<h3>Belum Input: ${belumList.length} mesin</h3>`;
+  const colsBelum = chunkInto(belumList);
+  html += `<div class="week-grid">` + colsBelum.map(col=>{
+    return `<div class="card belum">` + col.map(m=>
+  `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}
+  <span class="tooltip">Belum input</span>
+  </div>`
+).join("") + `</div>`;
   
   // PIE CHART Weekly
+  html += "<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>";
+
+  dataDisplay.innerHTML = html;
+
+  // pie chart data
   const sektorCount={};
-  list.forEach(m=>{
-    const match = weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"]));
-    if(match){ const s = safe(m.SEKTOR)||"—"; sektorCount[s]=(sektorCount[s]||0)+1; }
+  sudahList.forEach(m=>{
+    const s = safe(m.SEKTOR)||"—";
+    sektorCount[s] = (sektorCount[s]||0)+1;
   });
-  let chartHtml = "<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>";
-  dataDisplay.innerHTML += chartHtml;
+
   const ctx = document.getElementById("chartWeekly").getContext("2d");
   if(chartWeekly) chartWeekly.destroy();
-  chartWeekly = new Chart(ctx,{ type:"pie", data:{ labels:Object.keys(sektorCount).length?Object.keys(sektorCount):["No Data"], datasets:[{data:Object.values(sektorCount).length?Object.values(sektorCount):[1]}] }, options:{responsive:false}});
+  chartWeekly = new Chart(ctx,{
+    type:"pie",
+    data:{
+      labels: Object.keys(sektorCount).length? Object.keys(sektorCount):["No Data"],
+      datasets:[{data:Object.values(sektorCount).length?Object.values(sektorCount):[1]}]
+    },
+    options:{responsive:false}
+  });
 }
+
 
 // ------------------
 // Render Monthly
@@ -198,3 +335,4 @@ loadAll();
 
 </body>
 </html>
+
