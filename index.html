@@ -156,7 +156,7 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
 
 /* Popup Emot Tengah Layar */
 #emotPopup {
-    display: none;
+    display: none;      /* ⬅ WAJIB pake NONE */
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
@@ -164,7 +164,7 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
     backdrop-filter: blur(3px);
     z-index: 9999;
 
-  
+    /* ini aman karena flex baru aktif jika display:flex */
     align-items: center;
     justify-content: center;
 }
@@ -424,9 +424,12 @@ btnRefresh.addEventListener("click",()=>{
 // Initial load
 loadAll();
 </script>
-
+<div id="emotPopup">
+    <div class="emot-box">😎</div>
+</div>
 </body>
 </html>
+
 
 
 
