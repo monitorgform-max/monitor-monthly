@@ -101,6 +101,81 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
 .item:hover .tooltip{ visibility:visible; opacity:1; }
 .chart-wrap{ width:400px; height:360px; margin:18px auto; position:relative; text-align:center; background:white; padding:10px; border-radius:8px; }
 .chart-wrap canvas{ width:100% !important; height:100% !important; }
+/* === Monthly Purple Pastel === */
+.monthly-card.sudah {
+  background: #e9d8fd;  /* ungu pastel muda */
+  border: 1px solid #d6bcfa;
+}
+
+.monthly-card.belum {
+  background: #f3e8ff; /* ungu pastel lebih soft */
+  border: 1px solid #e9d5ff;
+}
+
+/* Hover biar tetap smooth */
+.monthly-card .item:hover {
+  background: rgba(120, 80, 200, 0.08);
+}
+/* ===== Efek Nimbul untuk Header Bar ===== */
+.header-bar {
+    transition: 0.25s ease;
+}
+.header-bar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* ===== Efek Nimbul untuk Semua Card ===== */
+.card {
+    transition: 0.25s ease;
+}
+.card:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+/* Tombol EL */
+.el-btn {
+    margin-left: auto;
+    background: #4c6ef5;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+.el-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: #3b5bdb;
+}
+
+/* Popup Emot Tengah Layar */
+#emotPopup {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px);
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#emotPopup .emot-box {
+    font-size: 150px;
+    animation: pop 0.25s ease-out;
+}
+
+@keyframes pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
 </style>
 </head>
 <body>
@@ -115,6 +190,7 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
     <button class="btn" id="btnMonthly">Monthly</button>
     <button class="btn" id="btnExport">Export</button>
     <button class="btn" id="btnRefresh">Refresh</button>
+    <button id="btnEL" class="el-btn">EL</button>
   </div>
 
   <!-- Weekly week buttons -->
@@ -331,14 +407,14 @@ function renderMonthly(){
   // render HTML: judul jumlah + grid 4 kolom
   let html = `<h3>Sudah Input: ${sudah.length} mesin</h3>`;
   html += `<div class="week-grid">` + colsSudah.map(col=>{
-    return `<div class="card sudah">` + (col.length ? col.map(it=>
+    return `<div class="card monthly-card sudah">` + (col.length ? col.map(it=>
       `<div class="item"><strong>${it.id}</strong> — ${it.sektor || ""}<br>${it.nama || ""}<br><small>${it.timestamp}</small><span class="tooltip">Timestamp: ${it.timestamp}</span></div>`
     ).join("") : `<div class="item">—</div>`) + `</div>`;
   }).join("") + `</div>`;
 
   html += `<h3>Belum Input: ${belum.length} mesin</h3>`;
   html += `<div class="week-grid">` + colsBelum.map(col=>{
-    return `<div class="card belum">` + (col.length ? col.map(it=>
+    return `<div class="card monthly-card belum">` + (col.length ? col.map(it=>
       `<div class="item"><strong>${it.id}</strong> — ${it.sektor || ""}<br>${it.nama || ""}<span class="tooltip">Belum input</span></div>`
     ).join("") : `<div class="item"></div>`) + `</div>`;
   }).join("") + `</div>`;
@@ -390,10 +466,28 @@ btnRefresh.addEventListener("click",()=>{
 
 // Initial load
 loadAll();
-</script>
+const btnEL = document.getElementById("btnEL");
+const emotPopup = document.getElementById("emotPopup");
 
+btnEL.addEventListener("click", () => {
+    emotPopup.style.display = "flex";
+});
+
+// klik di luar emot → close
+emotPopup.addEventListener("click", (e) => {
+    if (e.target === emotPopup) {
+        emotPopup.style.display = "none";
+    }
+});
+</script>
+<!-- ⬇⬇⬇ TEMPATKAN DI SINI ⬇⬇⬇ -->
+<div id="emotPopup">
+    <div class="emot-box">😎</div>
+</div>
+<!-- ⬆⬆⬆ TEMPATKAN DI SINI ⬆⬆⬆ -->
 </body>
 </html>
+
 
 
 
