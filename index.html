@@ -168,50 +168,71 @@ function renderWeekly(){
 // =======================
 // MONTHLY RENDER
 // =======================
+// --- REPLACE THIS FUNCTION IN YOUR HTML ---
 function renderMonthly(){
-  const sudah=[], belum=[], sektorCount={};
+  const sudahList = [], belumList = [], sektorCount = {};
 
+  // kumpulkan sudah / belum dari masterList
   for(const m of masterList){
     const id = safe(m["ID Mesin"]);
-    const sektor = safe(m.SEKTOR)||"—";
-    const nama = safe(m["Nama Lokasi"])||"—";
+    const sektor = safe(m.SEKTOR) || "—";
+    const nama = safe(m["Nama Lokasi"]) || "—";
 
-    const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-
+    const match = monthlyRows.find(r => safe(r["ID Mesin"]) === id);
     if(match){
-      sudah.push(`<div class='item'><strong>${id}</strong> — ${sektor}<br>${nama}<br><small>${match.Timestamp}</small></div>`);
-      sektorCount[sektor]=(sektorCount[sektor]||0)+1;
+      sudahList.push({ id, sektor, nama, timestamp: safe(match.Timestamp) || "—" });
+      sektorCount[sektor] = (sektorCount[sektor] || 0) + 1;
     } else {
-      belum.push(`<div class='item'><strong>${id}</strong> — ${sektor}<br>${nama}</div>`);
+      belumList.push({ id, sektor, nama });
     }
   }
 
-  // Bagi 4 kolom
-  const ms=document.getElementById("monthlySudah");
-  const mb=document.getElementById("monthlyBelum");
-  ms.innerHTML=""; mb.innerHTML="";
-
-  for(let col=0; col<4; col++){
-    const divS=document.createElement("div");
-    divS.className="card";
-    divS.innerHTML = sudah.filter((_,i)=>i%4===col).join("");
-    ms.appendChild(divS);
-
-    const divB=document.createElement("div");
-    divB.className="card";
-    divB.innerHTML = belum.filter((_,i)=>i%4===col).join("");
-    mb.appendChild(divB);
+  // fungsi bantu: bagi array menjadi `n` chunk dengan ukuran seimbang
+  function chunkInto(arr, n){
+    const out = Array.from({length: n}, () => []);
+    if(arr.length === 0) return out;
+    const per = Math.floor(arr.length / n);
+    const rem = arr.length % n;
+    let idx = 0;
+    for(let i=0;i<n;i++){
+      const size = per + (i < rem ? 1 : 0); // distribute remainder to first columns
+      out[i] = arr.slice(idx, idx + size);
+      idx += size;
+    }
+    return out;
   }
 
+  // bagi jadi 4 kolom seimbang
+  const colsSudah = chunkInto(sudahList, 4);
+  const colsBelum = chunkInto(belumList, 4);
+
+  // render ke DOM: monthlySudah & monthlyBelum harus dikosongkan dulu
+  const monthlySudah = document.getElementById("monthlySudah");
+  const monthlyBelum = document.getElementById("monthlyBelum");
+  monthlySudah.innerHTML = "";
+  monthlyBelum.innerHTML = "";
+
+  for(let i=0;i<4;i++){
+    const divS = document.createElement("div");
+    divS.className = "card";
+    divS.innerHTML = colsSudah[i].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.nama}<br><small>${it.timestamp || ""}</small></div>`).join("") || "<i>—</i>";
+    monthlySudah.appendChild(divS);
+
+    const divB = document.createElement("div");
+    divB.className = "card";
+    divB.innerHTML = colsBelum[i].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.nama}</div>`).join("") || "<i>—</i>";
+    monthlyBelum.appendChild(divB);
+  }
+
+  // update pie chart for monthly
   const labels = Object.keys(sektorCount);
   const counts = labels.map(l=>sektorCount[l]);
-
   const ctx = document.getElementById("chartMonthly").getContext("2d");
   if(chartMonthly) chartMonthly.destroy();
-  chartMonthly = new Chart(ctx,{
-    type:"pie",
-    data:{labels:labels.length?labels:["No Data"],datasets:[{data:counts.length?counts:[1]}]},
-    options:{responsive:false}
+  chartMonthly = new Chart(ctx, {
+    type: "pie",
+    data: { labels: labels.length ? labels : ["No Data"], datasets: [{ data: counts.length ? counts : [1] }] },
+    options: { responsive: false }
   });
 }
 
@@ -259,3 +280,4 @@ setInterval(loadAll, 600000);
 </script>
 </body>
 </html>
+
