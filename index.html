@@ -118,7 +118,10 @@ let chartWeekly = null, chartMonthly = null;
 async function loadAll(){
   masterList = await loadCSV(MASTER_CSV);
   weeklyRows = await fetch(WEEKLY_SHEET_URL).then(r=>r.json()).catch(()=>[]);
-  monthlyRows = await loadCSV(MONTHLY_SHEET_URL);
+  const rawMonthly = await loadCSV(MONTHLY_SHEET_URL);
+monthlyRows = getLatestPerID(rawMonthly);
+console.log("Monthly deduped:", rawMonthly.length, "→", monthlyRows.length);
+
 
   renderWeekly();
   renderMonthly();
@@ -168,6 +171,21 @@ function renderWeekly(){
 // =======================
 // MONTHLY RENDER
 // =======================
+function getLatestPerID(rows){
+  const map = {};
+  for(const r of rows){
+    const id = safe(r["ID Mesin"]);
+    if(!id) continue;
+
+    const ts = new Date(safe(r.Timestamp) || "1970-01-01").getTime();
+
+    if(!map[id] || ts > map[id].ts){
+      map[id] = { ...r, ts };
+    }
+  }
+  return Object.values(map);
+}
+
 // --- REPLACE THIS FUNCTION IN YOUR HTML ---
 function renderMonthly(){
   console.log("renderMonthly() start --- masterList, monthlyRows lengths:", masterList.length, monthlyRows.length);
@@ -316,6 +334,7 @@ setInterval(loadAll, 600000);
 </script>
 </body>
 </html>
+
 
 
 
