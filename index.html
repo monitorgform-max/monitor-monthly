@@ -91,7 +91,16 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
 .card.sudah .tooltip::after { border-color: #28a745 transparent transparent transparent; }
 .card.belum .tooltip::after { border-color: #dc3545 transparent transparent transparent; }
 .item:hover .tooltip { visibility: visible; opacity: 1; }
-
+.card.sudah { background:#d4edda; }
+.card.belum { background:#f8d7da; }
+.item { border-bottom:1px solid #eee; padding:6px 4px; font-size:13px; position:relative; transition: background .12s; }
+.item:hover{ background: rgba(0,0,0,0.04); padding-left:4px; }
+.item .tooltip{ visibility:hidden; opacity:0; transition:opacity .12s; position:absolute; bottom:125%; left:50%; transform:translateX(-50%); white-space:nowrap; padding:4px 6px; color:#fff; border-radius:4px; font-size:11px; z-index:10; }
+.card.sudah .tooltip{ background:#28a745; }
+.card.belum .tooltip{ background:#dc3545; }
+.item:hover .tooltip{ visibility:visible; opacity:1; }
+.chart-wrap{ width:400px; height:360px; margin:18px auto; position:relative; text-align:center; background:white; padding:10px; border-radius:8px; }
+.chart-wrap canvas{ width:100% !important; height:100% !important; }
 </style>
 </head>
 <body>
@@ -256,23 +265,83 @@ function renderWeekly(w){
 // Render Monthly
 // ------------------
 function renderMonthly(){
-  function chunkInto(arr,n){ const out=Array.from({length:n},()=>[]); if(arr.length===0) return out; const base=Math.floor(arr.length/n), rem=arr.length % n; let idx=0; for(let i=0;i<n;i++){ const size=base+(i<rem?1:0); out[i]=arr.slice(idx,idx+size); idx+=size;} return out; }
+  // safety: pastikan masterMonthly & monthlyRows tersedia
+  console.log("renderMonthly() start --- masterMonthly, monthlyRows lengths:", masterMonthly.length, monthlyRows.length);
 
-  const sudah=[], belum=[], sektorCount={};
-  masterMonthly.forEach(m=>{
-    const id = safe(m["ID Mesin"]);
-    const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-    if(match){ sudah.push({id,sektor:safe(m.SEKTOR)||"—"}); sektorCount[safe(m.SEKTOR)||"—"]=(sektorCount[safe(m.SEKTOR)||"—"]||0)+1; } 
-    else belum.push({id,sektor:safe(m.SEKTOR)||"—"});
-  });
+  // helper split into 4 columns (seimbang)
+  function chunkInto(arr, n=4){
+    const out = Array.from({length:n}, ()=>[]);
+    if(arr.length === 0) return out;
+    const base = Math.floor(arr.length / n), rem = arr.length % n;
+    let idx = 0;
+    for(let i=0;i<n;i++){
+      const size = base + (i < rem ? 1 : 0);
+      out[i] = arr.slice(idx, idx + size);
+      idx += size;
+    }
+    return out;
+  }
 
+  // normalize field name function (cari kolom yang paling mungkin)
+  function getField(obj, candidates){
+    if(!obj) return "";
+    for(const k of candidates){
+      if(typeof obj[k] !== "undefined") return obj[k];
+      // coba case-insensitive
+      const found = Object.keys(obj).find(x => x.toLowerCase() === k.toLowerCase());
+      if(found) return obj[found];
+    }
+    return "";
+  }
+
+  const sudah = [];
+  const belum = [];
+  const sektorCount = {};
+
+  // pastikan kita pakai field names yang fleksibel
+  // kandidat nama field di masterMonthly: "ID Mesin","ID","MACHINE ID"
+  // kandidat sektor: "SEKTOR","Sektor","Sektor / Area"
+  // kandidat nama lokasi: "Nama Lokasi","NAMA LOKASI","Lokasi"
+  // kandidat timestamp di monthlyRows: "Timestamp","Waktu","timestamp"
+  for(const m of masterMonthly){
+    const id = safe(getField(m, ["ID Mesin","MACHINE ID","ID","Machine ID"]));
+    if(!id) continue; // skip kosong
+    const sektor = safe(getField(m, ["SEKTOR","Sektor","Sektor / Area","Area"]));
+    const nama  = safe(getField(m, ["Nama Lokasi","NAMA LOKASI","Lokasi","Location"]));
+
+    // cari match di monthlyRows (sheet) — gunakan same flexible field
+    const match = monthlyRows.find(r =>{
+      const rid = safe(getField(r, ["ID Mesin","MACHINE ID","ID","Machine ID"]));
+      return rid && rid === id;
+    });
+
+    if(match){
+      const ts = safe(getField(match, ["Timestamp","timestamp","Waktu","Waktu Input"])) || "—";
+      sudah.push({id,sektor,nama,timestamp:ts});
+      sektorCount[sektor || "—"] = (sektorCount[sektor || "—"]||0)+1;
+    } else {
+      belum.push({id,sektor,nama});
+    }
+  }
+
+  // buat kolom 4x seimbang
   const colsSudah = chunkInto(sudah,4);
   const colsBelum = chunkInto(belum,4);
 
-  let html="<h3>SUDAH</h3><div class='week-grid'>"+colsSudah.map(col=>`<div class='card'>${col.map(c=>c.id).join("<br>")||"—"}</div>`).join("")+"</div>";
-  html+="<h3>BELUM</h3><div class='week-grid'>"+colsBelum.map(col=>`<div class='card'>${col.map(c=>c.id).join("<br>")||"—"}</div>`).join("")+"</div>";
-  html+="<div class='chart-wrap'><h4>Grafik Monthly</h4><canvas id='chartMonthly'></canvas></div>";
-  dataDisplay.innerHTML = html;
+  // render HTML: judul jumlah + grid 4 kolom
+  let html = `<h3>Sudah Input: ${sudah.length} mesin</h3>`;
+  html += `<div class="week-grid">` + colsSudah.map(col=>{
+    return `<div class="card sudah">` + (col.length ? col.map(it=>
+      `<div class="item"><strong>${it.id}</strong> — ${it.sektor || ""}<br>${it.nama || ""}<br><small>${it.timestamp}</small><span class="tooltip">Timestamp: ${it.timestamp}</span></div>`
+    ).join("") : `<div class="item">—</div>`) + `</div>`;
+  }).join("") + `</div>`;
+
+  html += `<h3>Belum Input: ${belum.length} mesin</h3>`;
+  html += `<div class="week-grid">` + colsBelum.map(col=>{
+    return `<div class="card belum">` + (col.length ? col.map(it=>
+      `<div class="item"><strong>${it.id}</strong> — ${it.sektor || ""}<br>${it.nama || ""}<span class="tooltip">Belum input</span></div>`
+    ).join("") : `<div class="item"></div>`) + `</div>`;
+  }).join("") + `</div>`;
 
   const ctx = document.getElementById("chartMonthly").getContext("2d");
   if(chartMonthly) chartMonthly.destroy();
@@ -325,6 +394,7 @@ loadAll();
 
 </body>
 </html>
+
 
 
 
