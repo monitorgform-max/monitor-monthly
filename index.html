@@ -152,30 +152,7 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
     background: #3b5bdb;
 }
 
-/* Popup Emot Tengah Layar */
-#emotPopup {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(3px);
-    z-index: 9999;
 
-  
-    align-items: center;
-    justify-content: center;
-}
-
-#emotPopup .emot-box {
-    font-size: 150px;
-    animation: pop 0.25s ease-out;
-}
-
-@keyframes pop {
-    from { transform: scale(0.6); opacity: 0; }
-    to   { transform: scale(1); opacity: 1; }
-}
 </style>
 </head>
 <body>
@@ -204,7 +181,30 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
 
   <!-- Data Display -->
   <div id="dataDisplay"></div>
+/* Popup Emot Tengah Layar */
+#emotPopup {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px);
+    z-index: 9999;
 
+  
+    align-items: center;
+    justify-content: center;
+}
+
+#emotPopup .emot-box {
+    font-size: 150px;
+    animation: pop 0.25s ease-out;
+}
+
+@keyframes pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
 </div>
 
 <script>
@@ -315,6 +315,8 @@ function renderWeekly(w){
   
   // PIE CHART Weekly
   html += "<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>";
+  html += "<div class='chart-wrap'><h4>Grafik Monthly</h4><canvas id='chartMonthly'></canvas></div>";
+
 
   dataDisplay.innerHTML = html;
 
@@ -438,9 +440,12 @@ weekBtns.forEach(b=>{
     renderWeekly(b.dataset.week);
   });
 });
-btnMonthly.addEventListener("click",()=>{
-  resetMainButtons(); btnMonthly.classList.add("active");
-  weekButtons.style.display="none"; renderMonthly();
+btnMonthly.addEventListener("click", async ()=>{
+  resetMainButtons(); 
+  btnMonthly.classList.add("active");
+  weekButtons.style.display="none"; 
+  await loadAll(); // pastikan data loaded
+  renderMonthly();
 });
 btnExport.addEventListener("click",()=>{
   resetMainButtons(); btnExport.classList.add("active");
@@ -488,6 +493,7 @@ emotPopup.addEventListener("click", (e) => {
 <!-- ⬆⬆⬆ TEMPATKAN DI SINI ⬆⬆⬆ -->
 </body>
 </html>
+
 
 
 
