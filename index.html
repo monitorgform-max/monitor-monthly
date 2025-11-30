@@ -24,17 +24,16 @@ header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-
 .card { background:white; padding:10px; border-radius:8px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
 .week-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
 .item { border-bottom:1px solid #eee; padding:4px 0; font-size:13px; }
-.chart-wrap { background:white; padding:10px; border-radius:8px; margin-top:14px; text-align:center; }
-.chart-wrap canvas {  transform-origin:top:center; width: 100% !important;
-  height: 100% !important;
-  width: 200px;        /* ganti sesuai keinginan */
+.chart-wrap { background:white; padding:10px; border-radius:8px; margin-top:14px; text-align:center;width: 200px;        /* ganti sesuai keinginan */
   height: 200px;       /* ganti sesuai keinginan */
   background: white;
   padding: 10px;
   border-radius: 8px;
   margin: 20px auto;   /* top-center */
   text-align: center;
-  position: relative;  /* penting supaya Chart.js responsive */}
+  position: relative;  /* penting supaya Chart.js responsive */ }
+.chart-wrap canvas {  transform-origin:top:center; width: 100% !important;
+  height: 100% !important; }
 .card.sudah { background:#d4edda; }   /* hijau muda */
 .card.belum { background:#f8d7da; }  /* merah muda */
 .card h4 { margin:0 0 8px; font-size:14px; color:black; background:#eaeaea; padding:4px; border-radius:4px; }
@@ -326,6 +325,7 @@ loadAll();
 
 </body>
 </html>
+
 
 
 
