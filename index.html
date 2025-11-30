@@ -248,7 +248,7 @@ function renderWeekly(w){
       labels: Object.keys(sektorCount).length? Object.keys(sektorCount):["No Data"],
       datasets:[{data:Object.values(sektorCount).length?Object.values(sektorCount):[1]}]
     },
-    options:{responsive:false}
+    options:{responsive:true, maintainAspectRatio:false}
   });
 }
 
@@ -326,6 +326,7 @@ loadAll();
 
 </body>
 </html>
+
 
 
 
