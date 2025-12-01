@@ -172,7 +172,29 @@ function renderWeekly(weekNumber){
 }
 
 
+btnMonthly.addEventListener("click", async ()=>{
+    resetMainButtons(); 
+    btnMonthly.classList.add("active");
+    weekButtons.style.display="none";
 
+    dataDisplay.innerHTML = "<div class='card'>Loading monthly data…</div>";
+
+    // --- Load master CSV monthly ---
+    masterMonthly = await loadCSV(MASTER_MONTHLY_CSV);
+
+    // --- Fetch sheet monthly (pakai ID baru) ---
+    const MONTHLY_FORM_URL = "https://opensheet.elk.sh/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/Form%20Responses%201";
+    monthlyRows = await fetch(MONTHLY_FORM_URL)
+        .then(r => r.json())
+        .catch(e => {
+            console.error("Gagal fetch monthly sheet:", e);
+            return [];
+        });
+
+    console.log("masterMonthly length:", masterMonthly.length);
+    console.log("monthlyRows length:", monthlyRows.length);
+    console.log("monthlyRows sample:", monthlyRows.slice(0,5));
+});
     // --- Render monthly ---
     if(masterMonthly.length===0 || monthlyRows.length===0) await loadAll();
 
@@ -249,29 +271,7 @@ weekBtns.forEach(b=>{
   });
 });
 
-btnMonthly.addEventListener("click", async ()=>{
-    resetMainButtons(); 
-    btnMonthly.classList.add("active");
-    weekButtons.style.display="none";
 
-    dataDisplay.innerHTML = "<div class='card'>Loading monthly data…</div>";
-
-    // --- Load master CSV monthly ---
-    masterMonthly = await loadCSV(MASTER_MONTHLY_CSV);
-
-    // --- Fetch sheet monthly (pakai ID baru) ---
-    const MONTHLY_FORM_URL = "https://opensheet.elk.sh/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/Form%20Responses%201";
-    monthlyRows = await fetch(MONTHLY_FORM_URL)
-        .then(r => r.json())
-        .catch(e => {
-            console.error("Gagal fetch monthly sheet:", e);
-            return [];
-        });
-
-    console.log("masterMonthly length:", masterMonthly.length);
-    console.log("monthlyRows length:", monthlyRows.length);
-    console.log("monthlyRows sample:", monthlyRows.slice(0,5));
-});
 
 btnRefresh.addEventListener("click", async ()=>{
   resetMainButtons(); btnRefresh.classList.add("active");
@@ -285,6 +285,7 @@ loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Klik Weekly atau Mon
 </script>
 </body>
 </html>
+
 
 
 
