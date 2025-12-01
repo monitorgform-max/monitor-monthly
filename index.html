@@ -20,6 +20,60 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
 .btn { padding:8px 16px; border:none; border-radius:6px; background:#1e5bb8; color:white; cursor:pointer; font-weight:bold; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .btn.active { background:red; }
 .btn:hover { transform: translateY(-2px) scale(1.08); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+/* Tombol EL konsisten ukuran & gaya + teks futuristik */
+.el-btn {
+  position: relative;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #1e5bb8;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  z-index: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.el-btn:hover {
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Animasi glow bergerak */
+@keyframes elGlowAnim {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.el-btn::before {
+  content: '';
+  position: absolute;
+  top: -3px; left: -3px; right: -3px; bottom: -3px;
+  border-radius: 6px;
+  background: linear-gradient(270deg, #0ff, #00f, #0ff, #00f);
+  background-size: 400% 400%;
+  filter: blur(6px);
+  opacity: 0.6;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+  animation: elGlowAnim 3s ease infinite;
+}
+
+.el-btn:hover::before {
+  opacity: 1;
+  filter: blur(10px);
+}
+
+.el-btn.active::before {
+  opacity: 1;
+  filter: blur(8px);
+  animation: elGlowAnim 1.5s ease infinite;
+}
 
 .week-row { display:flex; gap:8px; margin-bottom:12px; display:none; position:fixed; top:105px; left:0; right:0; padding:0 16px; background:#f5f7fa; z-index:998; }
 .week-btn { padding:6px 12px; border:none; border-radius:6px; background:#666; color:white; cursor:pointer; font-weight:bold; transition: transform 0.2s ease, box-shadow 0.2s ease; }
@@ -45,6 +99,113 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
 .week-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
 .chart-wrap { width:400px; height:360px; margin:18px auto; position:relative; text-align:center; background:white; padding:10px; border-radius:8px; }
 .chart-wrap canvas{ width:100% !important; height:100% !important; }
+
+/* ==== ROBOTIC ABSTRACT LOADING SCREEN ==== */
+#loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, #0a0f1f, #000);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  text-align: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #aee6ff;
+  overflow: hidden;
+}
+
+/* Garis-garis bergerak ala motherboard */
+#loadingOverlay::before,
+#loadingOverlay::after {
+  content: "";
+  position: absolute;
+  width: 180%;
+  height: 2px;
+  background: linear-gradient(90deg,#00d4ff,#0094ff,#0060ff,#00d4ff);
+  animation: scan 3s linear infinite;
+  opacity: 0.4;
+}
+#loadingOverlay::after {
+  animation-delay: 1.5s;
+  transform: rotate(90deg);
+}
+
+@keyframes scan {
+  0% { transform: translateX(-50%) translateY(-200%); }
+  100% { transform: translateX(-50%) translateY(200%); }
+}
+
+/* Spinner robotik */
+.spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(0, 174, 255, 0.2);
+  border-top: 4px solid #00c3ff;
+  border-right: 4px solid #0088ff;
+  border-radius: 50%;
+  backdrop-filter: blur(2px);
+  animation: spin 1s linear infinite;
+  margin: 16px 0;
+  box-shadow: 0 0 18px #00c3ff80;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Judul modern */
+#loadingOverlay h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+  text-shadow: 0 0 10px #00c3ff;
+}
+
+/* Subteks */
+#loadingOverlay p {
+  font-size: 14px;
+  color: #a2d3ff;
+  opacity: 0.75;
+}
+/* Loader Styles */
+  #loader {
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #0ff;
+    font-family: 'Orbitron', sans-serif;
+    z-index: 9999;
+  }
+  #loader h1 {
+    font-size: 2.5em;
+    margin-bottom: 0.5em;
+    text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
+  }
+  #loader p {
+    font-size: 1.2em;
+    margin-bottom: 2em;
+    text-shadow: 0 0 5px #0ff;
+  }
+  .spinner {
+    border: 6px solid #111;
+    border-top: 6px solid #0ff;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 15px #0ff;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
 </style>
 </head>
 <body>
@@ -53,13 +214,20 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
 
 <div class="wrap">
 
+<div id="loader">
+  <div class="loader-content">
+    <h1>LOADING......PLEASE WAIT....!!</h1>
+    <p>Alloh bersama orang-orang sabar</p>
+    <div class="spinner"></div>
+  </div>
+</div>
   <!-- Buttons -->
   <div class="button-row">
     <button class="btn" id="btnWeekly">Weekly</button>
     <button class="btn" id="btnMonthly">Monthly</button>
     <button class="btn" id="btnExport">Export</button>
     <button class="btn" id="btnRefresh">Refresh</button>
-    <button id="btnEL" class="el-btn">EL</button>
+    <button id="btnEL" class="el-btn">EL ⚡</button>
   </div>
 
   <!-- Weekly week buttons -->
@@ -306,14 +474,169 @@ btnRefresh.addEventListener("click", async ()=>{
     dataDisplay.innerHTML="<div class='card'>Data terbaru sudah dimuat.</div>";
 });
 
+
+// ----- EL Button Logic with Cyberpunk Glitch + Neon Flicker -----
+const btnEL = document.getElementById("btnEL");
+let elContainer = null;
+
+btnEL.addEventListener("click", ()=>{
+    resetMainButtons();
+    btnEL.classList.add("active");
+
+    // Disable button lain
+    [btnWeekly, btnMonthly, btnExport, btnRefresh].forEach(b=>b.disabled=true);
+
+    dataDisplay.innerHTML = "";
+    elContainer = document.createElement("div");
+    elContainer.style.textAlign = "center";
+    elContainer.style.marginTop = "60px";
+    elContainer.style.opacity = 0;
+    elContainer.style.transition = "opacity 0.5s ease-in-out";
+    dataDisplay.appendChild(elContainer);
+    setTimeout(()=>elContainer.style.opacity=1,50);
+
+    // Tombol "Klik"
+    const klikBtn = document.createElement("button");
+    klikBtn.textContent = "Klik";
+    klikBtn.className = "btn";
+    klikBtn.style.fontSize = "18px";
+    klikBtn.style.padding = "12px 24px";
+    klikBtn.style.transition = "transform 0.3s, box-shadow 0.3s";
+    klikBtn.onmouseover = ()=>{ klikBtn.style.transform="scale(1.1)"; klikBtn.style.boxShadow="0 6px 18px rgba(0,0,0,0.25)"; };
+    klikBtn.onmouseout = ()=>{ klikBtn.style.transform="scale(1)"; klikBtn.style.boxShadow=""; };
+    elContainer.appendChild(klikBtn);
+
+    klikBtn.addEventListener("click", ()=>{
+        klikBtn.style.transition = "opacity 0.4s";
+        klikBtn.style.opacity = 0;
+
+        // Loader cyberpunk glitch
+        const loader = document.createElement("div");
+        loader.style.width = "70px";
+        loader.style.height = "70px";
+        loader.style.margin = "40px auto";
+        loader.style.position = "relative";
+        elContainer.appendChild(loader);
+
+        // Neon rings
+        for(let i=0;i<3;i++){
+            const ring = document.createElement("div");
+            ring.style.position = "absolute";
+            ring.style.top="0"; ring.style.left="0"; ring.style.right="0"; ring.style.bottom="0";
+            ring.style.border="4px solid #1e5bb8";
+            ring.style.borderTop="4px solid #ff00ff";
+            ring.style.borderRadius="50%";
+            ring.style.animation=`spin ${0.8 + i*0.3}s linear infinite`;
+            ring.style.mixBlendMode="screen";
+            loader.appendChild(ring);
+        }
+
+        // Glitch overlay
+        const glitch = document.createElement("div");
+        glitch.style.position="absolute";
+        glitch.style.top=0; glitch.style.left=0; glitch.style.width="100%"; glitch.style.height="100%";
+        glitch.style.background="repeating-linear-gradient(45deg, rgba(255,0,255,0.15), rgba(255,0,255,0.15) 2px, transparent 2px, transparent 4px)";
+        glitch.style.animation="glitchAnim 0.2s linear infinite";
+        loader.appendChild(glitch);
+
+        // Loader keyframes
+        if(!document.getElementById("el-loader-style")){
+            const style = document.createElement("style");
+            style.id = "el-loader-style";
+            style.innerHTML = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes glitchAnim {
+                    0% { transform: translate(0,0); }
+                    20% { transform: translate(-2px,2px); }
+                    40% { transform: translate(2px,-1px); }
+                    60% { transform: translate(-1px,1px); }
+                    80% { transform: translate(1px,-2px); }
+                    100% { transform: translate(0,0); }
+                }
+                @keyframes neonFlicker {
+                    0%,19%,21%,23%,25%,54%,56%,100% { opacity:1; text-shadow: 0 0 6px #ff00ff, 0 0 12px #ff00ff; }
+                    20%,22%,24%,55% { opacity:0.4; text-shadow: none; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Setelah 1,4 detik loader selesai, tampilkan foto + teks + back
+        setTimeout(()=>{
+            elContainer.innerHTML = "";
+
+            const img = document.createElement("img");
+            img.src = "https://drive.google.com/uc?export=view&id=19jwYKbL6ctT7FY8un4_pk3z4MmTkdeCJ";
+            img.style.maxWidth = "90%";
+            img.style.borderRadius = "12px";
+            img.style.marginBottom = "12px";
+            img.style.opacity = 0;
+            img.style.transition = "opacity 0.7s ease-in-out, transform 0.7s";
+            img.style.transform = "scale(0.9)";
+            elContainer.appendChild(img);
+
+            const text = document.createElement("div");
+            text.textContent = "KEPO MAKSIMAL wkwkwk....";
+            text.style.fontSize = "22px";
+            text.style.fontWeight = "bold";
+            text.style.color = "#ff00ff";
+            text.style.marginBottom = "16px";
+            text.style.opacity = 0;
+            text.style.transition = "opacity 0.7s ease-in-out, transform 0.7s";
+            text.style.transform = "translateY(10px)";
+            text.style.animation = "neonFlicker 1.2s infinite";
+            elContainer.appendChild(text);
+
+            const backBtn = document.createElement("button");
+            backBtn.textContent = "Back to Home";
+            backBtn.className = "btn";
+            backBtn.style.fontSize = "16px";
+            backBtn.style.padding = "10px 20px";
+            backBtn.style.opacity = 0;
+            backBtn.style.transition = "opacity 0.7s ease-in-out, transform 0.7s";
+            backBtn.style.transform = "translateY(10px)";
+            backBtn.onmouseover = ()=>{ backBtn.style.transform="scale(1.05)"; backBtn.style.boxShadow="0 6px 18px rgba(0,0,0,0.25)"; };
+            backBtn.onmouseout = ()=>{ backBtn.style.transform="translateY(10px)"; backBtn.style.boxShadow=""; };
+            elContainer.appendChild(backBtn);
+
+            setTimeout(()=>{
+                img.style.opacity = 1; img.style.transform="scale(1)";
+                text.style.opacity = 1; text.style.transform="translateY(0)";
+                backBtn.style.opacity = 1; backBtn.style.transform="translateY(0)";
+            },50);
+
+            backBtn.addEventListener("click", ()=>{
+                dataDisplay.innerHTML = "<div class='card'>Klik Weekly atau Monthly untuk mulai</div>";
+                elContainer = null;
+                [btnWeekly, btnMonthly, btnExport, btnRefresh].forEach(b=>b.disabled=false);
+                resetMainButtons();
+            });
+        },1400); // delay total fade-out + loader
+    });
+});
+
+
 // Initial load
-loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Klik Weekly atau Monthly untuk mulai</div>");
+(async ()=>{
+  const loader = document.getElementById('loader');
+  loader.style.display = 'flex';       // tampilkan loader
+  await loadAll();                      // load semua data
+  loader.style.display = 'none';       // sembunyikan loader
+  dataDisplay.innerHTML = "<div class='card'>Klik Weekly atau Monthly untuk mulai</div>";
+})();
+
+});
+
 
 
 
 </script>
 </body>
 </html>
+
 
 
 
