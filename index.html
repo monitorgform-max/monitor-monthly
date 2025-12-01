@@ -225,114 +225,125 @@ const WEEKLY_SHEET_URL = `https://opensheet.elk.sh/${WEEKLY_SHEET_ID}/${encodeUR
 
 const MONTHLY_FORM_URL = "https://opensheet.elk.sh/19FeEccnYkZVAZo0lO-erbgLtJDAalG3IzwaiLympdck/Form%20Responses%201";
 
-// ------------------
-// Data
-// ------------------
-let weeklyRows=[], monthlyRows=[], masterWeekly=[], masterMonthly=[];
-let chartWeekly=null, chartMonthly=null;
+function getCol(obj,name){
+  if(!obj) return "";
+  const target = name.toLowerCase().trim();
+  for(const k in obj) if(k.toLowerCase().trim()===target) return obj[k];
+  return "";
+}
+function safe(v){ return v==null?"":String(v).trim();}
+function parseWeek(raw){ const m=String(raw).match(/(\d)/); const n=m?parseInt(m[1],10):1; return (n>=1&&n<=4)?n:1;}
 
-// ------------------
-// Utils
-// ------------------
-function safe(v){ return v==null?"":String(v).trim(); }
-function parseWeek(raw){ const m=String(raw).match(/(\d)/); const n=m?parseInt(m[1],10):1; return (n>=1 && n<=4)?n:1; }
-async function loadCSV(url){ return new Promise(resolve=>{ Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:r=>resolve(r.data),error:()=>resolve([])}); }); }
+let masterList=[], formRows=[], chart=null;
 
-// ------------------
-// Load all data
-// ------------------
-async function loadAll(){
-  masterWeekly = await loadCSV(MASTER_WEEKLY_CSV);
-  masterMonthly = await loadCSV(MASTER_MONTHLY_CSV);
-  weeklyRows = await fetch(WEEKLY_SHEET_URL).then(r=>r.json()).catch(()=>[]);
-  monthlyRows = await fetch(MONTHLY_FORM_URL).then(r=>r.json()).catch(()=>[]);
-  console.log("Data loaded:", masterWeekly.length,"weekly,", masterMonthly.length,"monthly");
+async function loadMaster(){
+  return new Promise(resolve=>{
+    Papa.parse(MASTER_CSV,{download:true,header:true,skipEmptyLines:true,
+      complete:r=>{ masterList = Array.isArray(r.data)? r.data.filter(x=>safe(getCol(x,"ID Mesin"))!=="") : []; console.log("master count:", masterList.length); resolve(); },
+      error:e=>{ console.warn("failed load master:",e); masterList=[]; resolve(); }
+    });
+  });
 }
 
-// ------------------
-// Render Weekly per week
-// ------------------
-function renderWeekly(weekNumber) {
-    // Filter CSV master berdasarkan week
-    const list = masterWeekly.filter(m => parseWeek(m.WEEK) === parseInt(weekNumber));
+async function loadForm(){
+  try{
+    const res = await fetch(FORM_URL,{cache:"no-store"});
+    formRows = await res.json();
+    if(!Array.isArray(formRows)) formRows=[];
+    console.log("form rows:",formRows.length);
+  }catch(e){ console.error("failed fetch form:",e); formRows=[]; }
+}
 
-    const sudahList = [];
-    const belumList = [];
+function render(){
+  const sudah={1:[],2:[],3:[],4:[]};
+  const belum={1:[],2:[],3:[],4:[]};
+  const sektorCount={};
 
-    list.forEach(m => {
-        const id = safe(m["ID Mesin"]);
-        const match = weeklyRows.find(r => safe(r["ID Mesin"]) === id);
-        if (match) sudahList.push({ ...m, Timestamp: match.Timestamp });
-        else belumList.push(m);
-    });
+  for(let w=1; w<=4; w++){
+    const masterThisWeek = masterList.filter(m=>parseWeek(getCol(m,"WEEK"))===w);
+    for(const m of masterThisWeek){
+      const id = safe(getCol(m,"ID Mesin"));
+      const sektorMaster = safe(getCol(m,"SEKTOR"))||"—";
+      const namaLokasiMaster = safe(getCol(m,"Nama Lokasi"))||"—";
 
-    // Helper: split array jadi 4 kolom
-    function chunkInto(arr, n = 4) {
-        const out = Array.from({ length: n }, () => []);
-        if (!arr.length) return out;
-        const base = Math.floor(arr.length / n);
-        const rem = arr.length % n;
-        let idx = 0;
-        for (let i = 0; i < n; i++) {
-            const size = base + (i < rem ? 1 : 0);
-            out[i] = arr.slice(idx, idx + size);
-            idx += size;
-        }
-        return out;
+      const match = formRows.find(r=>safe(getCol(r,"ID Mesin"))===id && parseWeek(getCol(r,"WEEK"))===w);
+
+      if(match){
+        sudah[w].push({
+          id,
+          sektor: sektorMaster,
+          namaLokasi: safe(getCol(match,"Nama Lokasi"))||namaLokasiMaster,
+          timestamp: safe(getCol(match,"Timestamp"))||"—",
+          week:`Week ${w}`
+        });
+        sektorCount[sektorMaster]=(sektorCount[sektorMaster]||0)+1;
+      }else{
+        belum[w].push({
+          id,
+          sektor: sektorMaster,
+          namaLokasi: namaLokasiMaster,
+          timestamp:"—",
+          week:`Week ${w}`
+        });
+      }
     }
+  }
 
-    // GRID SUDAH INPUT
-    let html = `<h3>Sudah Input: ${sudahList.length} mesin</h3>`;
-    const colsSudah = chunkInto(sudahList);
-    html += `<div class="week-grid">` + colsSudah.map(col => {
-        return `<div class="card sudah">` + col.map(m => {
-            return `<div class="item">
-                        <strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>
-                        ${safe(m["Nama Lokasi"])||"—"}<br>
-                        <small>${safe(m.Timestamp)||"—"}</small>
-                        <span class="tooltip">Timestamp: ${safe(m.Timestamp)||"—"}</span>
-                    </div>`;
-        }).join('') + `</div>`;
-    }).join('') + `</div>`;
+  for(let w=1; w<=4; w++){
+    document.getElementById("sudahW"+w).innerHTML = sudah[w].length
+      ? sudah[w].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}<br><small>${it.week} • ${it.timestamp}</small></div>`).join("")
+      : "<i>Tidak ada data</i>";
+    document.getElementById("belumW"+w).innerHTML = belum[w].length
+      ? belum[w].map(it=>`<div class="item"><strong>${it.id}</strong> — ${it.sektor}<br>${it.namaLokasi}</div>`).join("")
+      : "<i>Semua mesin terinput</i>";
+    document.getElementById("countSW"+w).innerText = `Total: ${sudah[w].length} mesin`;
+    document.getElementById("countBW"+w).innerText = `Total: ${belum[w].length} mesin`;
+  }
 
-    // GRID BELUM INPUT
-    html += `<h3>Belum Input: ${belumList.length} mesin</h3>`;
-    const colsBelum = chunkInto(belumList);
-    html += `<div class="week-grid">` + colsBelum.map(col => {
-        return `<div class="card belum">` + col.map(m => {
-            return `<div class="item">
-                        <strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>
-                        ${safe(m["Nama Lokasi"])||"—"}
-                        <span class="tooltip">Belum input</span>
-                    </div>`;
-        }).join('') + `</div>`;
-    }).join('') + `</div>`;
+  const labels = Object.keys(sektorCount);
+  const counts = labels.map(l=>sektorCount[l]);
+  const ctx = document.getElementById("chartSektor").getContext("2d");
+  if(chart) chart.destroy();
+  chart = new Chart(ctx,{
+    type:"pie",
+    data:{labels: labels.length?labels:["No Data"], datasets:[{data: counts.length?counts:[1]}]},
+    options:{responsive:false}
+  });
 
-    // PIE CHART berdasarkan SEKTOR (hanya sudah input)
-    const sektorCount = {};
-    sudahList.forEach(m => {
-        const s = safe(m.SEKTOR) || "—";
-        sektorCount[s] = (sektorCount[s] || 0) + 1;
-    });
-
-    html += `<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>`;
-
-    dataDisplay.innerHTML = html;
-
-    const ctx = document.getElementById("chartWeekly").getContext("2d");
-    if(chartWeekly) chartWeekly.destroy();
-    chartWeekly = new Chart(ctx, {
-        type: "pie",
-        data: {
-            labels: Object.keys(sektorCount).length ? Object.keys(sektorCount) : ["No Data"],
-            datasets: [{
-                data: Object.values(sektorCount).length ? Object.values(sektorCount) : [1],
-                backgroundColor: ["#28a745","#ffc107","#17a2b8","#dc3545","#6f42c1","#fd7e14"]
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
+  console.log("render done counts:",{sudah1:sudah[1].length,sudah2:sudah[2].length,sudah3:sudah[3].length,sudah4:sudah[4].length});
 }
+
+document.getElementById("btnRefresh").addEventListener("click",()=>loadAll());
+document.getElementById("btnExport").addEventListener("click",()=>{
+  const rows=[];
+  for(let w=1; w<=4; w++){
+    const masterThisWeek = masterList.filter(m=>parseWeek(getCol(m,"WEEK"))===w);
+    for(const m of masterThisWeek){
+      const id = safe(getCol(m,"ID Mesin"));
+      const sektorMaster = safe(getCol(m,"SEKTOR"))||"—";
+      const namaLokasiMaster = safe(getCol(m,"Nama Lokasi"))||"—";
+      const match = formRows.find(r=>safe(getCol(r,"ID Mesin"))===id && parseWeek(getCol(r,"WEEK"))===w);
+      if(match){
+        rows.push({Timestamp:safe(getCol(match,"Timestamp"))||"—",ID_Mesin:id,Nama_Lokasi:safe(getCol(match,"Nama Lokasi"))||namaLokasiMaster,WEEK:`Week ${w}`,SEKTOR:sektorMaster});
+      }else{
+        rows.push({Timestamp:"—",ID_Mesin:id,Nama_Lokasi:namaLokasiMaster,WEEK:`Week ${w}`,SEKTOR:sektorMaster});
+      }
+    }
+  }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,"Monitoring");
+  XLSX.writeFile(wb,`Monitoring_${new Date().toISOString().slice(0,10)}.xlsx`);
+});
+
+async function loadAll(){
+  await loadMaster();
+  await loadForm();
+  render();
+}
+
+loadAll();
+setInterval(loadAll,600000);
 
 
 // ------------------
@@ -463,17 +474,5 @@ loadAll();
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
 
 
