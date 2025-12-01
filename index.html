@@ -252,80 +252,86 @@ async function loadAll(){
 // ------------------
 // Render Weekly per week
 // ------------------
-function renderWeekly(w){
-  const list = masterWeekly.filter(m=>parseWeek(m.WEEK)===parseInt(w));
-  const sudahList = [];
-  const belumList = [];
+function renderWeekly(weekNumber) {
+    // Filter CSV master berdasarkan week
+    const list = masterWeekly.filter(m => parseWeek(m.WEEK) === parseInt(weekNumber));
 
-  list.forEach(m=>{
-    const id = safe(m["ID Mesin"]);
-    const match = weeklyRows.find(r=>safe(r["ID Mesin"])===id);
-    if(match) sudahList.push(m);
-    else belumList.push(m);
-  });
+    const sudahList = [];
+    const belumList = [];
 
-  // helper split array menjadi 4 kolom
-  function chunkInto(arr){
-    const n=4;
-    const out = Array.from({length:n}, ()=>[]);
-    if(arr.length===0) return out;
-    const base = Math.floor(arr.length/n);
-    const rem  = arr.length%n;
-    let idx = 0;
-    for(let i=0;i<n;i++){
-      const size = base + (i<rem?1:0);
-      out[i] = arr.slice(idx, idx+size);
-      idx += size;
+    list.forEach(m => {
+        const id = safe(m["ID Mesin"]);
+        const match = weeklyRows.find(r => safe(r["ID Mesin"]) === id);
+        if (match) sudahList.push({ ...m, Timestamp: match.Timestamp });
+        else belumList.push(m);
+    });
+
+    // Helper: split array jadi 4 kolom
+    function chunkInto(arr, n = 4) {
+        const out = Array.from({ length: n }, () => []);
+        if (!arr.length) return out;
+        const base = Math.floor(arr.length / n);
+        const rem = arr.length % n;
+        let idx = 0;
+        for (let i = 0; i < n; i++) {
+            const size = base + (i < rem ? 1 : 0);
+            out[i] = arr.slice(idx, idx + size);
+            idx += size;
+        }
+        return out;
     }
-    return out;
-  }
 
-  // GRID SUDAH
-  let html = `<h3>Sudah Input: ${sudahList.length} mesin</h3>`;
-  const colsSudah = chunkInto(sudahList);
-  html += `<div class="week-grid">` + colsSudah.map(col=>{
-    return `<div class="card sudah">` + col.map(m=>{
-      const ts = safe((weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"])) || {}).Timestamp) || "—";
-      return `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}<br>
-              <small>${ts}</small>
-              <span class="tooltip">Timestamp: ${ts}</span>
-              </div>`;
-    }).join("") + `</div>`;
-  }).join("") + `</div>`;
+    // GRID SUDAH INPUT
+    let html = `<h3>Sudah Input: ${sudahList.length} mesin</h3>`;
+    const colsSudah = chunkInto(sudahList);
+    html += `<div class="week-grid">` + colsSudah.map(col => {
+        return `<div class="card sudah">` + col.map(m => {
+            return `<div class="item">
+                        <strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>
+                        ${safe(m["Nama Lokasi"])||"—"}<br>
+                        <small>${safe(m.Timestamp)||"—"}</small>
+                        <span class="tooltip">Timestamp: ${safe(m.Timestamp)||"—"}</span>
+                    </div>`;
+        }).join('') + `</div>`;
+    }).join('') + `</div>`;
 
-  // GRID BELUM
-  html += `<h3>Belum Input: ${belumList.length} mesin</h3>`;
-  const colsBelum = chunkInto(belumList);
-  html += `<div class="week-grid">` + colsBelum.map(col=>{
-    return `<div class="card belum">` + col.map(m=>{
-      return `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}
-              <span class="tooltip">Belum input</span>
-              </div>`;
-    }).join("") + `</div>`;
-  }).join("") + `</div>`;
-  
-  // PIE CHART Weekly
-  html += "<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>";
+    // GRID BELUM INPUT
+    html += `<h3>Belum Input: ${belumList.length} mesin</h3>`;
+    const colsBelum = chunkInto(belumList);
+    html += `<div class="week-grid">` + colsBelum.map(col => {
+        return `<div class="card belum">` + col.map(m => {
+            return `<div class="item">
+                        <strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>
+                        ${safe(m["Nama Lokasi"])||"—"}
+                        <span class="tooltip">Belum input</span>
+                    </div>`;
+        }).join('') + `</div>`;
+    }).join('') + `</div>`;
 
-  dataDisplay.innerHTML = html;
+    // PIE CHART berdasarkan SEKTOR (hanya sudah input)
+    const sektorCount = {};
+    sudahList.forEach(m => {
+        const s = safe(m.SEKTOR) || "—";
+        sektorCount[s] = (sektorCount[s] || 0) + 1;
+    });
 
-  // pie chart data
-  const sektorCount={};
-  sudahList.forEach(m=>{
-    const s = safe(m.SEKTOR)||"—";
-    sektorCount[s] = (sektorCount[s]||0)+1;
-  });
+    html += `<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>`;
 
-  const ctx = document.getElementById("chartWeekly").getContext("2d");
-  if(chartWeekly) chartWeekly.destroy();
-  chartWeekly = new Chart(ctx,{
-    type:"pie",
-    data:{
-      labels: Object.keys(sektorCount).length? Object.keys(sektorCount):["No Data"],
-      datasets:[{data:Object.values(sektorCount).length?Object.values(sektorCount):[1]}]
-    },
-    options:{responsive:true, maintainAspectRatio:false}
-  });
+    dataDisplay.innerHTML = html;
+
+    const ctx = document.getElementById("chartWeekly").getContext("2d");
+    if(chartWeekly) chartWeekly.destroy();
+    chartWeekly = new Chart(ctx, {
+        type: "pie",
+        data: {
+            labels: Object.keys(sektorCount).length ? Object.keys(sektorCount) : ["No Data"],
+            datasets: [{
+                data: Object.values(sektorCount).length ? Object.values(sektorCount) : [1],
+                backgroundColor: ["#28a745","#ffc107","#17a2b8","#dc3545","#6f42c1","#fd7e14"]
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 }
 
 
@@ -457,6 +463,7 @@ loadAll();
 
 </body>
 </html>
+
 
 
 
