@@ -352,7 +352,7 @@ function renderMonthly(){
   masterMonthly.forEach(m=>{
     const id = safe(m["ID Mesin"]);
     const nama = safe(m["Nama Lokasi"]) || "—";
-    const sektor = safe(m.SEKTOR) || "—";
+    const sektor = safe(m.Sektor || m.SEKTOR || m.sektor) || "—";
     const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
     if(match){ 
       sudah.push({id, nama, sektor, ts: safe(match.Timestamp)||"—"}); 
@@ -457,6 +457,7 @@ loadAll();
 
 </body>
 </html>
+
 
 
 
