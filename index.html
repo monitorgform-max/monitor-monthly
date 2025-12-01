@@ -1,335 +1,477 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MONITORING GFORM</title>
+
+<!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-body{font-family:Calibri,Arial;background:#f5f7fa;margin:0;color:#222}
-header{background:#1e5bb8;color:white;padding:15px;text-align:center;font-weight:700}
-.wrap{padding:16px}
-.controls{display:flex;gap:10px;margin-bottom:12px}
-.btn{padding:8px 12px;border:none;border-radius:6px;background:#1e5bb8;color:#fff;cursor:pointer}
-.week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.card{background:white;padding:10px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.1);min-height:120px}
-.card h4{text-align:center;margin:0 0 8px;font-size:14px;color:black;background:#eaeaea;padding:4px;border-radius:4px}
-.item{border-bottom:1px solid #eee;padding:4px 0;font-size:13px}
-small{font-size:11px;color:#666}
-.chart-wrap{background:white;padding:10px;border-radius:8px;margin-top:14px;text-align:center}
-.chart-wrap canvas{transform:scale(0.6);transform-origin:top}
+body { font-family: Arial, sans-serif; margin:0; background:#f5f7fa; color:#222; }
+header { background:#1e5bb8; color:white; padding:15px; text-align:center; font-size:20px; font-weight:bold; position:fixed; top:0; left:0; right:0; z-index:1000; }
+.wrap { padding:16px; padding-top:90px; /* space for fixed header + buttons */ }
+.button-row { display:flex; gap:10px; margin-bottom:12px; position:fixed; top:60px; left:0; right:0; padding:0 16px; background:#f5f7fa; z-index:999; }
+.btn { padding:8px 16px; border:none; border-radius:6px; background:#1e5bb8; color:white; cursor:pointer; font-weight:bold; }
+.btn.active { background:red; }
+.week-row { display:flex; gap:8px; margin-bottom:12px; display:none; position:fixed; top:105px; left:0; right:0; padding:0 16px; background:#f5f7fa; z-index:998; }
+.week-btn { padding:6px 12px; border:none; border-radius:6px; background:#666; color:white; cursor:pointer; font-weight:bold; }
+.week-btn.active { background:red; }
+#dataDisplay { margin-top:150px; overflow-y:auto; max-height:calc(100vh - 150px); padding-bottom:20px; }
+.card { background:white; padding:10px; border-radius:8px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+.week-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
+.item { border-bottom:1px solid #eee; padding:4px 0; font-size:13px; }
+.chart-wrap { background:white; padding:10px; border-radius:8px; margin-top:14px; text-align:center;width: 400px;        /* ganti sesuai keinginan */
+  height: 400px;       /* ganti sesuai keinginan */
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 20px auto;   /* top-center */
+  text-align: center;
+  position: relative;  /* penting supaya Chart.js responsive */ }
+.chart-wrap canvas {  transform-origin:top:center; width: 100% !important;
+  height: 100% !important; }
+.card.sudah { background:#d4edda; }   /* hijau muda */
+.card.belum { background:#f8d7da; }  /* merah muda */
+.card h4 { margin:0 0 8px; font-size:14px; color:black; background:#eaeaea; padding:4px; border-radius:4px; }
+.item { border-bottom:1px solid #eee; padding:4px 0; font-size:13px; }
+.card {
+  border-radius:8px;
+  padding:6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.card.sudah { background:#d4edda; }
+.card.belum { background:#f8d7da; }
+
+.item {
+  border-bottom:1px solid #eee;
+  padding:4px 0;
+  font-size:13px;
+  position: relative;
+  cursor: default;
+  transition: background 0.15s ease, padding-left 0.15s ease;
+}
+.item:hover { background: rgba(0,0,0,0.05); padding-left:4px; }
+
+/* Tooltip */
+.item .tooltip {
+  visibility: hidden;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 2px 6px;
+  position: absolute;
+  z-index: 10;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.card.sudah .tooltip { background: #28a745; }
+.card.belum .tooltip { background: #dc3545; }
+.item .tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+}
+.card.sudah .tooltip::after { border-color: #28a745 transparent transparent transparent; }
+.card.belum .tooltip::after { border-color: #dc3545 transparent transparent transparent; }
+.item:hover .tooltip { visibility: visible; opacity: 1; }
+
+.card.sudah { background:#d4edda; }
+.card.belum { background:#f8d7da; }
+.item { border-bottom:1px solid #eee; padding:6px 4px; font-size:13px; position:relative; transition: background .12s; }
+.item:hover{ background: rgba(0,0,0,0.04); padding-left:4px; }
+.item .tooltip{ visibility:hidden; opacity:0; transition:opacity .12s; position:absolute; bottom:125%; left:50%; transform:translateX(-50%); white-space:nowrap; padding:4px 6px; color:#fff; border-radius:4px; font-size:11px; z-index:10; }
+.card.sudah .tooltip{ background:#28a745; }
+.card.belum .tooltip{ background:#dc3545; }
+.item:hover .tooltip{ visibility:visible; opacity:1; }
+.chart-wrap{ width:400px; height:360px; margin:18px auto; position:relative; text-align:center; background:white; padding:10px; border-radius:8px; }
+.chart-wrap canvas{ width:100% !important; height:100% !important; }
+/* === Monthly Purple Pastel === */
+.monthly-card.sudah {
+  background: #e9d8fd;  /* ungu pastel muda */
+  border: 1px solid #d6bcfa;
+}
+
+.monthly-card.belum {
+  background: #f3e8ff; /* ungu pastel lebih soft */
+  border: 1px solid #e9d5ff;
+}
+
+/* Hover biar tetap smooth */
+.monthly-card .item:hover {
+  background: rgba(120, 80, 200, 0.08);
+}
+/* ===== Efek Nimbul untuk Header Bar ===== */
+.header-bar {
+    transition: 0.25s ease;
+}
+.header-bar:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* ===== Efek Nimbul untuk Semua Card ===== */
+.card {
+    transition: 0.25s ease;
+}
+.card:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}  
+/* ===== Hover & shadow untuk semua card ===== */
+.card, .monthly-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card:hover, .monthly-card:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+
+/* ===== Hover & shadow untuk header ===== */
+header {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+header:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* ===== Tooltip text biru untuk monthly ===== */
+.monthly-card .tooltip {
+    color: #0d6efd; /* biru kontras */
+    background: #e0e0e0; /* bisa diganti sesuai selera, biar teks jelas */
+}
+
+/* ===== Hover & shadow untuk semua tombol ===== */
+.button-row .btn, .week-row .week-btn, .el-btn {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.button-row .btn:hover, .week-row .week-btn:hover, .el-btn:hover {
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
 </style>
 </head>
-
 <body>
+
 <header>MONITORING GFORM</header>
 
 <div class="wrap">
 
-  <div class="controls">
-    <button class="btn" id="btnWeekly">WEEKLY</button>
-    <button class="btn" id="btnMonthly">MONTHLY</button>
-    <button class="btn" id="btnExport">EXPORT</button>
-    <button class="btn" id="btnRefresh">REFRESH</button>
+  <!-- Buttons -->
+  <div class="button-row">
+    <button class="btn" id="btnWeekly">Weekly</button>
+    <button class="btn" id="btnMonthly">Monthly</button>
+    <button class="btn" id="btnExport">Export</button>
+    <button class="btn" id="btnRefresh">Refresh</button>
+
+    <button id="btnEL" class="el-btn">EL</button> <!-- tombol baru -->
   </div>
 
-  <!-- WEEKLY -->
-  <div id="weeklyDashboard">
-    <h3>Sudah Input Weekly</h3>
-    <div class="week-grid">
-      <div class="card"><h4>W1</h4><div id="sudahW1"></div></div>
-      <div class="card"><h4>W2</h4><div id="sudahW2"></div></div>
-      <div class="card"><h4>W3</h4><div id="sudahW3"></div></div>
-      <div class="card"><h4>W4</h4><div id="sudahW4"></div></div>
-    </div>
-
-    <h3>Belum Input Weekly</h3>
-    <div class="week-grid">
-      <div class="card"><h4>W1</h4><div id="belumW1"></div></div>
-      <div class="card"><h4>W2</h4><div id="belumW2"></div></div>
-      <div class="card"><h4>W3</h4><div id="belumW3"></div></div>
-      <div class="card"><h4>W4</h4><div id="belumW4"></div></div>
-    </div>
-
-    <div class="chart-wrap">
-      <h4>Grafik Weekly</h4>
-      <canvas id="chartWeekly"></canvas>
-    </div>
+  <!-- Weekly week buttons -->
+  <div class="week-row" id="weekButtons">
+    <button class="week-btn" data-week="1">W1</button>
+    <button class="week-btn" data-week="2">W2</button>
+    <button class="week-btn" data-week="3">W3</button>
+    <button class="week-btn" data-week="4">W4</button>
   </div>
 
-  <!-- MONTHLY -->
-  <div id="monthlyDashboard" style="display:none">
-    <h3>Sudah Input Monthly</h3>
-    <div class="week-grid" id="monthlySudah"></div>
-
-    <h3>Belum Input Monthly</h3>
-    <div class="week-grid" id="monthlyBelum"></div>
-
-    <div class="chart-wrap">
-      <h4>Grafik Monthly</h4>
-      <canvas id="chartMonthly"></canvas>
-    </div>
-  </div>
+  <!-- Data Display -->
+  <div id="dataDisplay"></div>
 
 </div>
 
 <script>
-// =======================
-// URL DATA FIX
-// =======================
-const MASTER_CSV = "Data Mesin.csv";
-const MASTER_MONTHLY_CSV = "Data Mesin Monthly.csv";  // ← CSV baru khusus monthly
+// ------------------
+// State
+// ------------------
+const btnWeekly = document.getElementById("btnWeekly");
+const btnMonthly = document.getElementById("btnMonthly");
+const btnExport = document.getElementById("btnExport");
+const btnRefresh = document.getElementById("btnRefresh");
+const weekButtons = document.getElementById("weekButtons");
+const weekBtns = document.querySelectorAll(".week-btn");
+const dataDisplay = document.getElementById("dataDisplay");
+
+function resetMainButtons() { [btnWeekly, btnMonthly, btnExport, btnRefresh].forEach(b=>b.classList.remove("active")); }
+function resetWeekButtons() { weekBtns.forEach(b=>b.classList.remove("active")); }
+
+// ------------------
+// URLs
+// ------------------
+const MASTER_WEEKLY_CSV = "Data Mesin.csv"; 
+const MASTER_MONTHLY_CSV = "Data Mesin Monthly.csv"; 
 
 const WEEKLY_SHEET_ID = "19FeEccnYkZVAZo0lO-erbgLtJDAalG3IzwaiLympdck";
 const WEEKLY_SHEET_NAME = "Form Responses 1";
 const WEEKLY_SHEET_URL = `https://opensheet.elk.sh/${WEEKLY_SHEET_ID}/${encodeURIComponent(WEEKLY_SHEET_NAME)}`;
 
-const MONTHLY_SHEET_URL = "https://docs.google.com/spreadsheets/d/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/export?format=csv&gid=1674075217";
+const MONTHLY_FORM_URL = "https://opensheet.elk.sh/19FeEccnYkZVAZo0lO-erbgLtJDAalG3IzwaiLympdck/Form%20Responses%201";
 
-let masterList = [];
-let monthlyRows = [];
-// =======================
-// UTILITIES
-// =======================
-function safe(v){ return v==null ? "" : String(v).trim(); }
+// ------------------
+// Data
+// ------------------
+let weeklyRows=[], monthlyRows=[], masterWeekly=[], masterMonthly=[];
+let chartWeekly=null, chartMonthly=null;
 
-function parseWeek(raw){
-  const m = String(raw).match(/(\d)/);
-  const n = m ? parseInt(m[1],10) : 1;
-  return (n>=1 && n<=4) ? n : 1;
-}
+// ------------------
+// Utils
+// ------------------
+function safe(v){ return v==null?"":String(v).trim(); }
+function parseWeek(raw){ const m=String(raw).match(/(\d)/); const n=m?parseInt(m[1],10):1; return (n>=1 && n<=4)?n:1; }
+async function loadCSV(url){ return new Promise(resolve=>{ Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:r=>resolve(r.data),error:()=>resolve([])}); }); }
 
-async function loadCSV(url){
-  return new Promise(resolve=>{
-    Papa.parse(url,{download:true,header:true,skipEmptyLines:true,
-      complete:r=>resolve(r.data), error:()=>resolve([])});
-  });
-}
-
-// =======================
-// GLOBAL STATE
-// =======================
-let masterList = [], weeklyRows = [], monthlyRows = [];
-let chartWeekly = null, chartMonthly = null;
-
-// =======================
-// LOAD ALL
-// =======================
-/* ------------------------------------------------------
-   LOAD MONTHLY MASTER CSV (100 mesin saja)
--------------------------------------------------------*/
-function loadMonthly() {
-    document.getElementById("status").innerHTML = "Loading data…";
-
-    Papa.parse(MASTER_MONTHLY_CSV, {
-        download: true,
-        header: true,
-        complete: function (res) {
-            masterList = res.data.filter(r => r["MACHINE ID"]);
-
-            Papa.parse(MONTHLY_FORM_URL, {
-                download: true,
-                header: true,
-                complete: function (res2) {
-                    monthlyRows = res2.data;
-                    renderMonthly();
-                }
-            });
-        }
-    });
-}  
+// ------------------
+// Load all data
+// ------------------
 async function loadAll(){
-  masterList = await loadCSV(MASTER_CSV);
+  masterWeekly = await loadCSV(MASTER_WEEKLY_CSV);
+  masterMonthly = await loadCSV(MASTER_MONTHLY_CSV);
   weeklyRows = await fetch(WEEKLY_SHEET_URL).then(r=>r.json()).catch(()=>[]);
-  const rawMonthly = await loadCSV(MONTHLY_SHEET_URL);
-monthlyRows = getLatestPerID(rawMonthly);
-console.log("Monthly deduped:", rawMonthly.length, "→", monthlyRows.length);
-
-
-  renderWeekly();
-  renderMonthly();
+  monthlyRows = await fetch(MONTHLY_FORM_URL).then(r=>r.json()).catch(()=>[]);
+  console.log("Data loaded:", masterWeekly.length,"weekly,", masterMonthly.length,"monthly");
 }
 
-// =======================
-// WEEKLY RENDER
-// =======================
-function renderWeekly(){
-  const sudah={1:[],2:[],3:[],4:[]};
-  const belum={1:[],2:[],3:[],4:[]};
-  const sektorCount={};
+// ------------------
+// Render Weekly per week
+// ------------------
+function renderWeekly(weekNumber) {
+    // Filter CSV master berdasarkan week
+    const list = masterWeekly.filter(m => parseWeek(m.WEEK) === parseInt(weekNumber));
 
-  for(let w=1;w<=4;w++){
-    const masterW = masterList.filter(m=>parseWeek(m.WEEK)===w);
-    for(const m of masterW){
-      const id = safe(m["ID Mesin"]);
-      const sektor = safe(m.SEKTOR)||"—";
-      const nama = safe(m["Nama Lokasi"])||"—";
+    const sudahList = [];
+    const belumList = [];
 
-      const match = weeklyRows.find(r=> safe(r["ID Mesin"])===id && parseWeek(r.WEEK)===w );
-
-      if(match){
-        sudah[w].push(`<div class='item'><strong>${id}</strong> — ${sektor}<br>${nama}<br><small>${match.Timestamp}</small></div>`);
-        sektorCount[sektor] = (sektorCount[sektor]||0)+1;
-      } else {
-        belum[w].push(`<div class='item'><strong>${id}</strong> — ${sektor}<br>${nama}</div>`);
-      }
-    }
-    document.getElementById("sudahW"+w).innerHTML = sudah[w].join("") || "<i>Tidak ada</i>";
-    document.getElementById("belumW"+w).innerHTML = belum[w].join("") || "<i>Tidak ada</i>";
-  }
-
-  // PIE CHART
-  const labels = Object.keys(sektorCount);
-  const counts = labels.map(l=>sektorCount[l]);
-  const ctx = document.getElementById("chartWeekly").getContext("2d");
-
-  if(chartWeekly) chartWeekly.destroy();
-  chartWeekly = new Chart(ctx,{
-    type:"pie",
-    data:{labels:labels.length?labels:["No Data"],datasets:[{data:counts.length?counts:[1]}]},
-    options:{responsive:false}
-  });
-}
-
-// =======================
-// MONTHLY RENDER
-// =======================
-function getLatestPerID(rows){
-  const map = {};
-  for(const r of rows){
-    const id = safe(r["ID Mesin"]);
-    if(!id) continue;
-
-    const ts = new Date(safe(r.Timestamp) || "1970-01-01").getTime();
-
-    if(!map[id] || ts > map[id].ts){
-      map[id] = { ...r, ts };
-    }
-  }
-  return Object.values(map);
-}
-
-/* ------------------------------------------------------
-   RENDER MONTHLY — SPLIT PASTI 4 KOLOM (25/25/25/25)
--------------------------------------------------------*/
-function renderMonthly() {
-
-    const sudah = [];
-    const belum = [];
-
-    // proses setiap mesin master
-    masterList.forEach(m => {
-        const id = (m["MACHINE ID"] || "").trim();
-
-        const found = monthlyRows.find(r => (r["MACHINE ID"] || "").trim() === id);
-
-        if (found) {
-            sudah.push(id);
-        } else {
-            belum.push(id);
-        }
+    list.forEach(m => {
+        const id = safe(m["ID Mesin"]);
+        const match = weeklyRows.find(r => safe(r["ID Mesin"]) === id);
+        if (match) sudahList.push({ ...m, Timestamp: match.Timestamp });
+        else belumList.push(m);
     });
 
-    // pastikan jumlah tetap konsisten (100 mesin)
-    const chunk = arr => {
-        const size = Math.ceil(arr.length / 4);
-        return [
-            arr.slice(0, size),
-            arr.slice(size, size * 2),
-            arr.slice(size * 2, size * 3),
-            arr.slice(size * 3, size * 4)
-        ];
-    };
+    // Helper: split array jadi 4 kolom
+    function chunkInto(arr, n = 4) {
+        const out = Array.from({ length: n }, () => []);
+        if (!arr.length) return out;
+        const base = Math.floor(arr.length / n);
+        const rem = arr.length % n;
+        let idx = 0;
+        for (let i = 0; i < n; i++) {
+            const size = base + (i < rem ? 1 : 0);
+            out[i] = arr.slice(idx, idx + size);
+            idx += size;
+        }
+        return out;
+    }
 
-    const colsSudah = chunk(sudah);
-    const colsBelum = chunk(belum);
+    // GRID SUDAH INPUT
+    let html = `<h3>Sudah Input: ${sudahList.length} mesin</h3>`;
+    const colsSudah = chunkInto(sudahList);
+    html += `<div class="week-grid">` + colsSudah.map(col => {
+        return `<div class="card sudah">` + col.map(m => {
+            return `<div class="item">
+                        <strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>
+                        ${safe(m["Nama Lokasi"])||"—"}<br>
+                        <small>${safe(m.Timestamp)||"—"}</small>
+                        <span class="tooltip">Timestamp: ${safe(m.Timestamp)||"—"}</span>
+                    </div>`;
+        }).join('') + `</div>`;
+    }).join('') + `</div>`;
 
-    // render helper
-    const fill = (id, list) => {
-        document.getElementById(id).innerHTML = list
-            .map(i => `<div class="item">${i}</div>`).join("");
-    };
+    // GRID BELUM INPUT
+    html += `<h3>Belum Input: ${belumList.length} mesin</h3>`;
+    const colsBelum = chunkInto(belumList);
+    html += `<div class="week-grid">` + colsBelum.map(col => {
+        return `<div class="card belum">` + col.map(m => {
+            return `<div class="item">
+                        <strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>
+                        ${safe(m["Nama Lokasi"])||"—"}
+                        <span class="tooltip">Belum input</span>
+                    </div>`;
+        }).join('') + `</div>`;
+    }).join('') + `</div>`;
 
-    fill("col1_sudah", colsSudah[0]);
-    fill("col2_sudah", colsSudah[1]);
-    fill("col3_sudah", colsSudah[2]);
-    fill("col4_sudah", colsSudah[3]);
+    // PIE CHART berdasarkan SEKTOR (hanya sudah input)
+    const sektorCount = {};
+    sudahList.forEach(m => {
+        const s = safe(m.SEKTOR) || "—";
+        sektorCount[s] = (sektorCount[s] || 0) + 1;
+    });
 
-    fill("col1_belum", colsBelum[0]);
-    fill("col2_belum", colsBelum[1]);
-    fill("col3_belum", colsBelum[2]);
-    fill("col4_belum", colsBelum[3]);
+    html += `<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>`;
 
-    document.getElementById("status").innerHTML =
-        `SUDAH: ${sudah.length} • BELUM: ${belum.length}`;
+    dataDisplay.innerHTML = html;
+
+    const ctx = document.getElementById("chartWeekly").getContext("2d");
+    if(chartWeekly) chartWeekly.destroy();
+    chartWeekly = new Chart(ctx, {
+        type: "pie",
+        data: {
+            labels: Object.keys(sektorCount).length ? Object.keys(sektorCount) : ["No Data"],
+            datasets: [{
+                data: Object.values(sektorCount).length ? Object.values(sektorCount) : [1],
+                backgroundColor: ["#28a745","#ffc107","#17a2b8","#dc3545","#6f42c1","#fd7e14"]
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 }
-  // PIE CHART update (monthly)
-  const labels = Object.keys(sektorCount);
-  const counts = labels.map(l => sektorCount[l]);
-  const ctx = document.getElementById("chartMonthly") && document.getElementById("chartMonthly").getContext("2d");
-  if(!ctx){
-    console.warn("chartMonthly canvas not found");
-    return;
-  }
-  if(chartMonthly) try{ chartMonthly.destroy(); }catch(e){/*ignore*/}
 
+
+// ------------------
+// Render Monthly
+// ------------------
+function renderMonthly(){
+  // helper buat split array jadi n kolom
+  function chunkInto(arr, n){ 
+    const out = Array.from({length:n}, ()=>[]); 
+    if(arr.length===0) return out; 
+    const base = Math.floor(arr.length/n), rem = arr.length % n; 
+    let idx = 0; 
+    for(let i=0;i<n;i++){ 
+      const size = base + (i<rem?1:0); 
+      out[i] = arr.slice(idx, idx+size); 
+      idx += size;
+    } 
+    return out; 
+  }
+
+  // Pisah Sudah / Belum input
+  const sudah=[], belum=[], sektorCount={};
+  masterMonthly.forEach(m=>{
+    const id = safe(m["ID Mesin"]);
+    const nama = safe(m["Nama Lokasi"]) || "—";
+    const sektor = safe(m.Sektor || m.SEKTOR || m.sektor) || "—";
+    const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
+    if(match){ 
+      sudah.push({id, nama, sektor, ts: safe(match.Timestamp)||"—"}); 
+      sektorCount[sektor] = (sektorCount[sektor]||0)+1; 
+    } else {
+      belum.push({id, nama, sektor});
+    }
+  });
+
+  // Bagi 4 kolom
+  const colsSudah = chunkInto(sudah,4);
+  const colsBelum = chunkInto(belum,4);
+
+  // HTML SUDAH
+  let html = `<h3>Sudah Input: ${sudah.length} mesin</h3>`;
+  html += `<div class="week-grid">` + colsSudah.map(col=>{
+    return `<div class="monthly-card sudah">` + col.map(c=>{
+      return `<div class="item">
+                <strong>${c.id}</strong> — ${c.sektor}<br>
+                ${c.nama}<br>
+                <small>${c.ts}</small>
+                <span class="tooltip">Timestamp: ${c.ts}</span>
+              </div>`;
+    }).join('') + `</div>`;
+  }).join('') + `</div>`;
+
+  // HTML BELUM
+  html += `<h3>Belum Input: ${belum.length} mesin</h3>`;
+  html += `<div class="week-grid">` + colsBelum.map(col=>{
+    return `<div class="monthly-card belum">` + col.map(c=>{
+      return `<div class="item">
+                <strong>${c.id}</strong> — ${c.sektor}<br>
+                ${c.nama}
+                <span class="tooltip">Belum input</span>
+              </div>`;
+    }).join('') + `</div>`;
+  }).join('') + `</div>`;
+
+  // Pie chart Monthly
+  html += `<div class='chart-wrap'><h4>Grafik Monthly</h4><canvas id='chartMonthly'></canvas></div>`;
+
+  dataDisplay.innerHTML = html;
+
+  // Render Chart.js
+  const ctx = document.getElementById("chartMonthly").getContext("2d");
+  if(chartMonthly) chartMonthly.destroy();
   chartMonthly = new Chart(ctx,{
     type: "pie",
-    data: { labels: labels.length ? labels : ["No Data"], datasets: [{ data: counts.length ? counts : [1] }] },
-    options: { responsive: false }
+    data:{
+      labels: Object.keys(sektorCount).length? Object.keys(sektorCount):["No Data"],
+      datasets:[{data: Object.values(sektorCount).length? Object.values(sektorCount):[1]}]
+    },
+    options:{responsive:true, maintainAspectRatio:false}
   });
-
-  console.log("renderMonthly() DONE");
 }
 
+  
+// ------------------
+// Buttons logic
+// ------------------
 
-// =======================
-// BUTTONS
-// =======================
-document.getElementById("btnWeekly").onclick = ()=>{
-  weeklyDashboard.style.display="block";
-  monthlyDashboard.style.display="none";
-};
-
-document.getElementById("btnMonthly").onclick = ()=>{
-  weeklyDashboard.style.display="none";
-  monthlyDashboard.style.display="block";
-};
-
-document.getElementById("btnRefresh").onclick = ()=>loadAll();
-
-// EXPORT
-document.getElementById("btnExport").onclick = ()=>{
+btnWeekly.addEventListener("click",()=>{
+  resetMainButtons(); btnWeekly.classList.add("active");
+  weekButtons.style.display="flex"; dataDisplay.innerHTML=""; resetWeekButtons();
+});
+weekBtns.forEach(b=>{
+  b.addEventListener("click",()=>{
+    resetWeekButtons(); b.classList.add("active");
+    renderWeekly(b.dataset.week);
+  });
+});
+btnMonthly.addEventListener("click",()=>{
+  resetMainButtons(); btnMonthly.classList.add("active");
+  weekButtons.style.display="none"; renderMonthly();
+});
+btnExport.addEventListener("click",()=>{
+  resetMainButtons(); btnExport.classList.add("active");
   const rows=[];
-  for(const m of masterList){
-    const id=safe(m["ID Mesin"]);
-    const nama=safe(m["Nama Lokasi"]);
-    const sektor=safe(m.SEKTOR)||"—";
-    const weeklyMatch=weeklyRows.find(r=>safe(r["ID Mesin"])===id);
-    const monthlyMatch=monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-
-    rows.push({
-      ID:id,
-      Nama_Lokasi:nama,
-      Sektor:sektor,
-      Weekly: weeklyMatch? weeklyMatch.Timestamp : "—",
-      Monthly: monthlyMatch? monthlyMatch.Timestamp : "—"
-    });
-  }
+  masterWeekly.forEach(m=>{
+    const id = safe(m["ID Mesin"]);
+    const nama = safe(m["Nama Lokasi"]);
+    const sektor = safe(m.SEKTOR)||"—";
+    const weeklyMatch = weeklyRows.find(r=>safe(r["ID Mesin"])===id);
+    const monthlyMatch = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
+    rows.push({ID:id, Nama_Lokasi:nama, Sektor:sektor, Weekly: weeklyMatch?weeklyMatch.Timestamp:"—", Monthly: monthlyMatch?monthlyMatch.Timestamp:"—"});
+  });
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb,ws,"Monitoring");
   XLSX.writeFile(wb,"Monitoring.xlsx");
-};
+  dataDisplay.innerHTML="<div class='card'>Export berhasil!</div>";
+});
+btnRefresh.addEventListener("click",()=>{
+  resetMainButtons(); btnRefresh.classList.add("active");
+  dataDisplay.innerHTML="<div class='card'>Refresh…</div>";
+  loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Data terbaru sudah dimuat.</div>");
+});
 
+// Initial load
 loadAll();
-setInterval(loadAll, 600000);
 </script>
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
 
 
 
