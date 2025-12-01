@@ -215,26 +215,12 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
 <div class="wrap">
 
 <!-- Loader Modern Robotik -->
-<div id="loader" style="
-  position:fixed;
-  top:0; left:0; right:0; bottom:0;
-  background:#111;
-  color:#0ff;
-  font-family:monospace;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  z-index:2000;
-  font-size:24px;
-">
-  <div style="text-align:center;">
-    LOADING......PLEASE WAIT....!!
+<div id="loader">
+  <div class="loader-content">
+    <h1>LOADING......PLEASE WAIT....!!</h1>
+    <p>Alloh bersama orang-orang sabar</p>
+    <div class="spinner"></div>
   </div>
-  <div style="margin-top:12px; font-size:16px; color:#0f0;">
-    Alloh bersama orang-orang sabar
-  </div>
-  <div style="margin-top:30px; width:60px; height:60px; border:6px solid #0ff; border-top:6px solid transparent; border-radius:50%; animation:spin 1s linear infinite;"></div>
 </div>
   <!-- Buttons -->
   <div class="button-row">
@@ -647,9 +633,7 @@ async function initApp() {
 
 // Panggil init
 initApp();
-})();
 
-});
 
 
 
@@ -657,6 +641,7 @@ initApp();
 </script>
 </body>
 </html>
+
 
 
 
