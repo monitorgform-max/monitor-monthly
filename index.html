@@ -39,7 +39,7 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
 .item .tooltip{ visibility:hidden; opacity:0; transition:opacity .12s; position:absolute; bottom:125%; left:50%; transform:translateX(-50%); white-space:nowrap; padding:4px 6px; color:#fff; border-radius:4px; font-size:11px; z-index:10; }
 .card.sudah .tooltip{ background:#28a745; }
 .card.belum .tooltip{ background:#dc3545; }
-.monthly-card .tooltip{ background:#0d6efd; background:#e0e0e0; } /* biru text biru, bg abu supaya jelas */
+.monthly-card .tooltip{ color:#0d6efd; background:#e0e0e0; } /* biru text biru, bg abu supaya jelas */
 .item:hover .tooltip{ visibility:visible; opacity:1; }
 
 .week-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
@@ -259,3 +259,4 @@ loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Klik Weekly atau Mon
 </script>
 </body>
 </html>
+
