@@ -174,8 +174,8 @@ header:hover {
 <header>MONITORING GFORM</header>
 
 <div class="wrap">
-
-  <!-- Buttons -->
+  <div class="controls">
+    <!-- Buttons -->
   <div class="button-row">
     <button class="btn" id="btnWeekly">Weekly</button>
     <button class="btn" id="btnMonthly">Monthly</button>
@@ -191,11 +191,30 @@ header:hover {
     <button class="week-btn" data-week="2">W2</button>
     <button class="week-btn" data-week="3">W3</button>
     <button class="week-btn" data-week="4">W4</button>
+    <div style="margin-left:8px;color:#666;font-size:13px">Auto-refresh 10 menit — shows Timestamp, ID Mesin, Nama Lokasi, WEEK, SEKTOR</div>
+  </div>
+<!-- Data Display -->
+  <div id="dataDisplay"></div>
+  <div class="week-grid">
+    <div class="card" id="cardW1"><h4>WEEK 1</h4><div id="sudahW1">—</div><div id="countSW1" style="margin-top:8px"></div></div>
+    <div class="card" id="cardW2"><h4>WEEK 2</h4><div id="sudahW2">—</div><div id="countSW2" style="margin-top:8px"></div></div>
+    <div class="card" id="cardW3"><h4>WEEK 3</h4><div id="sudahW3">—</div><div id="countSW3" style="margin-top:8px"></div></div>
+    <div class="card" id="cardW4"><h4>WEEK 4</h4><div id="sudahW4">—</div><div id="countSW4" style="margin-top:8px"></div></div>
   </div>
 
-  <!-- Data Display -->
-  <div id="dataDisplay"></div>
+  <h3 style="margin-top:18px">Belum Terinput</h3>
+  <div class="week-grid" style="margin-bottom:18px">
+    <div class="card week1"><h4>W1</h4><div id="belumW1">—</div><div id="countBW1"></div></div>
+    <div class="card week2"><h4>W2</h4><div id="belumW2">—</div><div id="countBW2"></div></div>
+    <div class="card week3"><h4>W3</h4><div id="belumW3">—</div><div id="countBW3"></div></div>
+    <div class="card week4"><h4>W4</h4><div id="belumW4">—</div><div id="countBW4"></div></div>
+  </div>
 
+  <div id="chartWrap" style="background:#fff;padding:12px;border-radius:8px; width:100%; text-align:center;">
+  <h4>Grafik per SEKTOR</h4>
+  <div style="display:inline-block; transform: scale(1.8); transform-origin: top center;">
+    <canvas id="chartSektor"></canvas>
+  </div>
 </div>
 
 <script>
@@ -213,12 +232,8 @@ const dataDisplay = document.getElementById("dataDisplay");
 function resetMainButtons() { [btnWeekly, btnMonthly, btnExport, btnRefresh].forEach(b=>b.classList.remove("active")); }
 function resetWeekButtons() { weekBtns.forEach(b=>b.classList.remove("active")); }
 
-// ------------------
-// URLs
-// ------------------
 const MASTER_WEEKLY_CSV = "Data Mesin.csv"; 
 const MASTER_MONTHLY_CSV = "Data Mesin Monthly.csv"; 
-
 const WEEKLY_SHEET_ID = "19FeEccnYkZVAZo0lO-erbgLtJDAalG3IzwaiLympdck";
 const WEEKLY_SHEET_NAME = "Form Responses 1";
 const WEEKLY_SHEET_URL = `https://opensheet.elk.sh/${WEEKLY_SHEET_ID}/${encodeURIComponent(WEEKLY_SHEET_NAME)}`;
@@ -344,135 +359,20 @@ async function loadAll(){
 
 loadAll();
 setInterval(loadAll,600000);
-
-
-// ------------------
-// Render Monthly
-// ------------------
-function renderMonthly(){
-  // helper buat split array jadi n kolom
-  function chunkInto(arr, n){ 
-    const out = Array.from({length:n}, ()=>[]); 
-    if(arr.length===0) return out; 
-    const base = Math.floor(arr.length/n), rem = arr.length % n; 
-    let idx = 0; 
-    for(let i=0;i<n;i++){ 
-      const size = base + (i<rem?1:0); 
-      out[i] = arr.slice(idx, idx+size); 
-      idx += size;
-    } 
-    return out; 
-  }
-
-  // Pisah Sudah / Belum input
-  const sudah=[], belum=[], sektorCount={};
-  masterMonthly.forEach(m=>{
-    const id = safe(m["ID Mesin"]);
-    const nama = safe(m["Nama Lokasi"]) || "—";
-    const sektor = safe(m.Sektor || m.SEKTOR || m.sektor) || "—";
-    const match = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-    if(match){ 
-      sudah.push({id, nama, sektor, ts: safe(match.Timestamp)||"—"}); 
-      sektorCount[sektor] = (sektorCount[sektor]||0)+1; 
-    } else {
-      belum.push({id, nama, sektor});
-    }
-  });
-
-  // Bagi 4 kolom
-  const colsSudah = chunkInto(sudah,4);
-  const colsBelum = chunkInto(belum,4);
-
-  // HTML SUDAH
-  let html = `<h3>Sudah Input: ${sudah.length} mesin</h3>`;
-  html += `<div class="week-grid">` + colsSudah.map(col=>{
-    return `<div class="monthly-card sudah">` + col.map(c=>{
-      return `<div class="item">
-                <strong>${c.id}</strong> — ${c.sektor}<br>
-                ${c.nama}<br>
-                <small>${c.ts}</small>
-                <span class="tooltip">Timestamp: ${c.ts}</span>
-              </div>`;
-    }).join('') + `</div>`;
-  }).join('') + `</div>`;
-
-  // HTML BELUM
-  html += `<h3>Belum Input: ${belum.length} mesin</h3>`;
-  html += `<div class="week-grid">` + colsBelum.map(col=>{
-    return `<div class="monthly-card belum">` + col.map(c=>{
-      return `<div class="item">
-                <strong>${c.id}</strong> — ${c.sektor}<br>
-                ${c.nama}
-                <span class="tooltip">Belum input</span>
-              </div>`;
-    }).join('') + `</div>`;
-  }).join('') + `</div>`;
-
-  // Pie chart Monthly
-  html += `<div class='chart-wrap'><h4>Grafik Monthly</h4><canvas id='chartMonthly'></canvas></div>`;
-
-  dataDisplay.innerHTML = html;
-
-  // Render Chart.js
-  const ctx = document.getElementById("chartMonthly").getContext("2d");
-  if(chartMonthly) chartMonthly.destroy();
-  chartMonthly = new Chart(ctx,{
-    type: "pie",
-    data:{
-      labels: Object.keys(sektorCount).length? Object.keys(sektorCount):["No Data"],
-      datasets:[{data: Object.values(sektorCount).length? Object.values(sektorCount):[1]}]
-    },
-    options:{responsive:true, maintainAspectRatio:false}
-  });
-}
-
-  
-// ------------------
-// Buttons logic
-// ------------------
-
-btnWeekly.addEventListener("click",()=>{
-  resetMainButtons(); btnWeekly.classList.add("active");
-  weekButtons.style.display="flex"; dataDisplay.innerHTML=""; resetWeekButtons();
-});
-weekBtns.forEach(b=>{
-  b.addEventListener("click",()=>{
-    resetWeekButtons(); b.classList.add("active");
-    renderWeekly(b.dataset.week);
-  });
-});
-btnMonthly.addEventListener("click",()=>{
-  resetMainButtons(); btnMonthly.classList.add("active");
-  weekButtons.style.display="none"; renderMonthly();
-});
-btnExport.addEventListener("click",()=>{
-  resetMainButtons(); btnExport.classList.add("active");
-  const rows=[];
-  masterWeekly.forEach(m=>{
-    const id = safe(m["ID Mesin"]);
-    const nama = safe(m["Nama Lokasi"]);
-    const sektor = safe(m.SEKTOR)||"—";
-    const weeklyMatch = weeklyRows.find(r=>safe(r["ID Mesin"])===id);
-    const monthlyMatch = monthlyRows.find(r=>safe(r["ID Mesin"])===id);
-    rows.push({ID:id, Nama_Lokasi:nama, Sektor:sektor, Weekly: weeklyMatch?weeklyMatch.Timestamp:"—", Monthly: monthlyMatch?monthlyMatch.Timestamp:"—"});
-  });
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb,ws,"Monitoring");
-  XLSX.writeFile(wb,"Monitoring.xlsx");
-  dataDisplay.innerHTML="<div class='card'>Export berhasil!</div>";
-});
-btnRefresh.addEventListener("click",()=>{
-  resetMainButtons(); btnRefresh.classList.add("active");
-  dataDisplay.innerHTML="<div class='card'>Refresh…</div>";
-  loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Data terbaru sudah dimuat.</div>");
-});
-
-// Initial load
-loadAll();
 </script>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 
