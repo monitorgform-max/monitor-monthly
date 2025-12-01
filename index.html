@@ -172,33 +172,7 @@ function renderWeekly(weekNumber){
 }
 
 
-// ------------------
-// State
-// ------------------
-const btnMonthly = document.getElementById("btnMonthly");
-const weekButtons = document.getElementById("weekButtons");
-const dataDisplay = document.getElementById("dataDisplay");
 
-// ------------------
-// Utils
-// ------------------
-function safe(v){ return v==null?"":String(v).trim(); }
-async function loadCSV(url){ 
-    return new Promise(resolve=>{
-        Papa.parse(url,{
-            download:true,
-            header:true,
-            skipEmptyLines:true,
-            complete:r=>resolve(r.data),
-            error:()=>resolve([])
-        });
-    }); 
-}
-
-// ------------------
-// Data
-// ------------------
-let masterMonthly=[], monthlyRows=[];
 
 // ------------------
 // Render Monthly
@@ -329,6 +303,7 @@ loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Klik Weekly atau Mon
 </script>
 </body>
 </html>
+
 
 
 
