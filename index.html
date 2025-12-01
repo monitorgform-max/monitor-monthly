@@ -171,52 +171,83 @@ function renderWeekly(weekNumber){
     dataDisplay.innerHTML = html;
 }
 
-// ------------------
-// Render Monthly
-// ------------------
-function renderMonthly(){
+btnMonthly.addEventListener("click", async ()=>{
+    resetMainButtons(); 
+    btnMonthly.classList.add("active");
+    weekButtons.style.display="none";
+
+    // tampil loading sementara
+    dataDisplay.innerHTML = "<div class='card'>Loading monthly data…</div>";
+
+    // --- Load master CSV monthly ---
+    masterMonthly = await loadCSV(MASTER_MONTHLY_CSV);
+
+    // --- Fetch sheet monthly ---
+    monthlyRows = await fetch(MONTHLY_FORM_URL)
+        .then(r => r.json())
+        .catch(e => {
+            console.error("Gagal fetch monthly sheet:", e);
+            return [];
+        });
+
+    console.log("masterMonthly length:", masterMonthly.length);
+    console.log("monthlyRows length:", monthlyRows.length);
+    console.log("monthlyRows sample:", monthlyRows.slice(0,5)); // debug 5 baris pertama
+
+    // --- Render monthly ---
     const sudah=[], belum=[];
+
     masterMonthly.forEach(m=>{
         const id = safe(m["ID Mesin"]);
         const nama = safe(m["Nama Lokasi"]) || "—";
         const sektor = safe(m.Sektor || m.SEKTOR) || "—";
+
         const match = monthlyRows.find(r => safe(r["ID Mesin"]) === id);
-        if(match) sudah.push({id,nama,sektor,ts:safe(match.Timestamp)});
-        else belum.push({id,nama,sektor});
+
+        if(match){
+            let tsRaw = safe(match.Timestamp).trim();
+            let ts = tsRaw;
+            const parsedDate = new Date(tsRaw);
+            if(!isNaN(parsedDate)) ts = parsedDate.toLocaleString('id-ID',{hour12:false});
+            sudah.push({id,nama,sektor,ts});
+        } else {
+            belum.push({id,nama,sektor});
+        }
     });
 
     function chunk(arr,n=4){
         const out = Array.from({length:n},()=>[]);
-        let idx=0, base=Math.floor(arr.length/n), rem=arr.length%n;
+        let idx=0;
+        const base = Math.floor(arr.length/n), rem = arr.length%n;
         for(let i=0;i<n;i++){
-            const size = base+(i<rem?1:0);
-            out[i]=arr.slice(idx,idx+size);
+            const size = base + (i<rem?1:0);
+            out[i] = arr.slice(idx,idx+size);
             idx+=size;
         }
         return out;
     }
 
-    let html=`<h3>Sudah Input (${sudah.length} mesin)</h3>`;
-    html+=`<div class="week-grid">`+chunk(sudah).map(col=>`
+    let html = `<h3>Sudah Input (${sudah.length} mesin)</h3>`;
+    html += `<div class="week-grid">` + chunk(sudah).map(col=>`
         <div class="monthly-card sudah">${col.map(c=>`
             <div class="item">
                 <strong>${c.id}</strong> — ${c.sektor}<br>
                 ${c.nama}<br>
                 <small>${c.ts}</small>
                 <span class="tooltip">Timestamp: ${c.ts}</span>
-            </div>`).join('')}</div>`).join('')+`</div>`;
+            </div>`).join('')}</div>`).join('') + `</div>`;
 
-    html+=`<h3>Belum Input (${belum.length} mesin)</h3>`;
-    html+=`<div class="week-grid">`+chunk(belum).map(col=>`
+    html += `<h3>Belum Input (${belum.length} mesin)</h3>`;
+    html += `<div class="week-grid">` + chunk(belum).map(col=>`
         <div class="monthly-card belum">${col.map(c=>`
             <div class="item">
                 <strong>${c.id}</strong> — ${c.sektor}<br>
                 ${c.nama}
                 <span class="tooltip">Belum input</span>
-            </div>`).join('')}</div>`).join('')+`</div>`;
+            </div>`).join('')}</div>`).join('') + `</div>`;
 
     dataDisplay.innerHTML = html;
-}
+});
 
 // ------------------
 // Buttons
@@ -259,4 +290,5 @@ loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Klik Weekly atau Mon
 </script>
 </body>
 </html>
+
 
