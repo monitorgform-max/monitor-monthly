@@ -197,7 +197,7 @@ btnMonthly.addEventListener("click", async ()=>{
 });
     // --- Render monthly ---
     if(masterMonthly.length===0 || monthlyRows.length===0) await loadAll();
-
+function renderMonthly(){
     const sudah=[], belum=[];
     masterMonthly.forEach(m=>{
         const id = safe(m["ID Mesin"]);
@@ -290,6 +290,7 @@ loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Klik Weekly atau Mon
 </script>
 </body>
 </html>
+
 
 
 
