@@ -100,8 +100,9 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
 .chart-wrap { width:400px; height:360px; margin:18px auto; position:relative; text-align:center; background:white; padding:10px; border-radius:8px; }
 .chart-wrap canvas{ width:100% !important; height:100% !important; }
 
-/* ==== ROBOTIC ABSTRACT LOADING SCREEN ==== */
-#loadingOverlay {
+
+/* Loader utama */
+#loader {
   position: fixed;
   inset: 0;
   background: radial-gradient(circle at 30% 30%, #0a0f1f, #000);
@@ -109,103 +110,73 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
-  text-align: center;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #aee6ff;
+  color: #0ff;
+  font-family: 'Orbitron', sans-serif;
+  z-index: 9999;
   overflow: hidden;
 }
 
-/* Garis-garis bergerak ala motherboard */
-#loadingOverlay::before,
-#loadingOverlay::after {
-  content: "";
+/* Judul neon robotik */
+#loader h1 {
+  font-size: 2.5em;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #0ff;
+  text-shadow: 0 0 10px #00f0ff, 0 0 20px #00cfff, 0 0 30px #0ff;
+  animation: neonFlicker 1.2s infinite;
+}
+
+/* Subteks */
+#loader p {
+  font-size: 1.2em;
+  margin-bottom: 2em;
+  color: #a2d3ff;
+  opacity: 0.8;
+  text-shadow: 0 0 6px #00cfff;
+}
+
+/* Spinner cyberpunk */
+.spinner {
+  width: 80px;
+  height: 80px;
+  border: 6px solid rgba(0, 174, 255, 0.2);
+  border-top: 6px solid #00cfff;
+  border-right: 6px solid #0088ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  box-shadow: 0 0 20px #00cfff80;
+  margin-bottom: 20px;
+}
+
+/* Garis bergerak futuristik */
+.scan-line {
   position: absolute;
   width: 180%;
   height: 2px;
   background: linear-gradient(90deg,#00d4ff,#0094ff,#0060ff,#00d4ff);
-  animation: scan 3s linear infinite;
   opacity: 0.4;
 }
-#loadingOverlay::after {
-  animation-delay: 1.5s;
-  transform: rotate(90deg);
+.line1 { top: 30%; animation: scan 3s linear infinite; }
+.line2 { bottom: 30%; transform: rotate(90deg); animation: scan 3s linear infinite; animation-delay: 1.5s; }
+
+/* Animasi spinner */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
+/* Neon flicker text */
+@keyframes neonFlicker {
+  0%,19%,21%,23%,25%,54%,56%,100% { opacity:1; text-shadow: 0 0 6px #0ff, 0 0 12px #0ff, 0 0 18px #00d4ff; }
+  20%,22%,24%,55% { opacity:0.4; text-shadow: none; }
+}
+
+/* Scan line animation */
 @keyframes scan {
   0% { transform: translateX(-50%) translateY(-200%); }
   100% { transform: translateX(-50%) translateY(200%); }
 }
-
-/* Spinner robotik */
-.spinner {
-  width: 80px;
-  height: 80px;
-  border: 4px solid rgba(0, 174, 255, 0.2);
-  border-top: 4px solid #00c3ff;
-  border-right: 4px solid #0088ff;
-  border-radius: 50%;
-  backdrop-filter: blur(2px);
-  animation: spin 1s linear infinite;
-  margin: 16px 0;
-  box-shadow: 0 0 18px #00c3ff80;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Judul modern */
-#loadingOverlay h1 {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  margin-bottom: 6px;
-  text-shadow: 0 0 10px #00c3ff;
-}
-
-/* Subteks */
-#loadingOverlay p {
-  font-size: 14px;
-  color: #a2d3ff;
-  opacity: 0.75;
-}
-/* Loader Styles */
-  #loader {
-    position: fixed;
-    top:0; left:0; right:0; bottom:0;
-    background: #0a0a0a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    color: #0ff;
-    font-family: 'Orbitron', sans-serif;
-    z-index: 9999;
-  }
-  #loader h1 {
-    font-size: 2.5em;
-    margin-bottom: 0.5em;
-    text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
-  }
-  #loader p {
-    font-size: 1.2em;
-    margin-bottom: 2em;
-    text-shadow: 0 0 5px #0ff;
-  }
-  .spinner {
-    border: 6px solid #111;
-    border-top: 6px solid #0ff;
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
-    animation: spin 1s linear infinite;
-    box-shadow: 0 0 15px #0ff;
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg);}
-    100% { transform: rotate(360deg);}
-  }
 </style>
 </head>
 <body>
@@ -214,14 +185,16 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
 
 <div class="wrap">
 
-<!-- Loader Modern Robotik -->
+<!-- Loader Modern Robotik Cyberpunk -->
 <div id="loader">
-  <div class="loader-content">
-    <h1>LOADING......PLEASE WAIT....!!</h1>
-    <p>Alloh bersama orang-orang sabar</p>
-    <div class="spinner"></div>
-  </div>
+  <h1>LOADING......PLEASE WAIT....!!</h1>
+  <p>Alloh bersama orang-orang sabar</p>
+  <div class="spinner"></div>
+  <!-- Garis bergerak futuristik -->
+  <div class="scan-line line1"></div>
+  <div class="scan-line line2"></div>
 </div>
+
   <!-- Buttons -->
   <div class="button-row">
     <button class="btn" id="btnWeekly">Weekly</button>
@@ -648,6 +621,7 @@ initApp();
 </script>
 </body>
 </html>
+
 
 
 
