@@ -625,15 +625,20 @@ async function initApp() {
   const loader = document.getElementById('loader');
   loader.style.display = 'flex';
 
-  await loadAll(); // load data
+  try {
+    // coba load data, timeout 5 detik kalau macet
+    await Promise.race([
+      loadAll(),
+      new Promise((_, reject) => setTimeout(()=>reject("Load timeout"),5000))
+    ]);
+    console.log("Data loaded sukses");
+  } catch(e) {
+    console.warn("Load gagal:", e);
+  }
 
   loader.style.display = 'none';
   dataDisplay.innerHTML = "<div class='card'>Klik Weekly atau Monthly untuk mulai</div>";
 }
-
-// Panggil init
-initApp();
-
 
 
 
@@ -641,6 +646,7 @@ initApp();
 </script>
 </body>
 </html>
+
 
 
 
