@@ -270,22 +270,7 @@ async function loadAll(){
   monthlyRows = await fetch(MONTHLY_FORM_URL).then(r=>r.json()).catch(()=>[]);
   console.log("Data loaded:", masterWeekly.length,"weekly,", masterMonthly.length,"monthly");
 }
-// ------------------
-// Loader Smooth Init
-// ------------------
-async function initApp() {
-    loader.style.opacity = 1;
-    loader.style.display = 'flex';
-    
-    await loadAll(); // load data
 
-    // Fade-out smooth
-    loader.style.transition = "opacity 0.6s ease";
-    loader.style.opacity = 0;
-    setTimeout(()=>loader.style.display = "none", 600);
-
-    // Tampilan awal
-    dataDisplay.innerHTML = "<div class='card'>Klik Weekly atau Monthly untuk mulai</div>";
 // ------------------
 // Render Weekly
 // ------------------
@@ -609,6 +594,22 @@ btnEL.addEventListener("click", ()=>{
     });
 });
 // ------------------
+// Loader Smooth Init
+// ------------------
+async function initApp() {
+    loader.style.opacity = 1;
+    loader.style.display = 'flex';
+    
+    await loadAll(); // load data
+
+    // Fade-out smooth
+    loader.style.transition = "opacity 0.6s ease";
+    loader.style.opacity = 0;
+    setTimeout(()=>loader.style.display = "none", 600);
+
+    // Tampilan awal
+    dataDisplay.innerHTML = "<div class='card'>Klik Weekly atau Monthly untuk mulai</div>";
+  // ------------------
 // Start App
 // ------------------
 initApp();
@@ -621,6 +622,7 @@ initApp();
 </script>
 </body>
 </html>
+
 
 
 
