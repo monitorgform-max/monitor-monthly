@@ -391,6 +391,15 @@ btnExport.addEventListener("click",()=>{
   masterWeekly.forEach(m=>{
     const id = safe(m["ID Mesin"]);
 
+btnRefresh.addEventListener("click",()=>{
+  resetMainButtons(); btnRefresh.classList.add("active");
+  dataDisplay.innerHTML="<div class='card'>Refresh…</div>";
+  loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Data terbaru sudah dimuat.</div>");
+});
 
+// Initial load
+loadAll();
+</script>
 </body>
 </html>
+
