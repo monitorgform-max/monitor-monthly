@@ -253,13 +253,28 @@ async function loadAll(){
 // Render Weekly per week
 // ------------------
 function renderWeekly(w){
-  const list = masterWeekly.filter(m=>parseWeek(m.WEEK)===parseInt(w));
+  const targetWeek = parseInt(w);
+  const list = [];
+
+  // MASTER tidak punya WEEK — WEEK ada di weeklyRows
+  masterWeekly.forEach(m=>{
+    const id = safe(m["ID Mesin"]);
+    const match = weeklyRows.find(r => safe(r["ID Mesin"]) === id);
+
+    if(match){
+      const weekNum = parseWeek(match["WEEK"] || match["Week"]);
+      if(weekNum === targetWeek){
+        list.push(m); 
+      }
+    }
+  });
+
   const sudahList = [];
   const belumList = [];
 
   list.forEach(m=>{
     const id = safe(m["ID Mesin"]);
-    const match = weeklyRows.find(r=>safe(r["ID Mesin"])===id);
+    const match = weeklyRows.find(r=>safe(r["ID Mesin"])===id && parseWeek(r["WEEK"])===targetWeek);
     if(match) sudahList.push(m);
     else belumList.push(m);
   });
@@ -285,7 +300,8 @@ function renderWeekly(w){
   const colsSudah = chunkInto(sudahList);
   html += `<div class="week-grid">` + colsSudah.map(col=>{
     return `<div class="card sudah">` + col.map(m=>{
-      const ts = safe((weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"])) || {}).Timestamp) || "—";
+      const match = weeklyRows.find(r=>safe(r["ID Mesin"])===safe(m["ID Mesin"]) && parseWeek(r["WEEK"])===targetWeek);
+      const ts = safe(match ? match.Timestamp : "") || "—";
       return `<div class="item"><strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)||"—"}<br>${safe(m["Nama Lokasi"])||"—"}<br>
               <small>${ts}</small>
               <span class="tooltip">Timestamp: ${ts}</span>
@@ -303,7 +319,7 @@ function renderWeekly(w){
               </div>`;
     }).join("") + `</div>`;
   }).join("") + `</div>`;
-  
+
   // PIE CHART Weekly
   html += "<div class='chart-wrap'><h4>Grafik Weekly</h4><canvas id='chartWeekly'></canvas></div>";
 
@@ -327,6 +343,7 @@ function renderWeekly(w){
     options:{responsive:true, maintainAspectRatio:false}
   });
 }
+
 
 
 // ------------------
@@ -457,6 +474,7 @@ loadAll();
 
 </body>
 </html>
+
 
 
 
