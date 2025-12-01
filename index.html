@@ -229,7 +229,6 @@ const btnRefresh = document.getElementById("btnRefresh");
 const weekButtons = document.getElementById("weekButtons");
 const weekBtns = document.querySelectorAll(".week-btn");
 const dataDisplay = document.getElementById("dataDisplay");
-const btnEL = document.getElementById("btnEL");
 const loader = document.getElementById("loader"); // loader
 
 function resetMainButtons() { [btnWeekly, btnMonthly, btnExport, btnRefresh].forEach(b=>b.classList.remove("active")); }
@@ -269,6 +268,12 @@ async function loadAll(){
   weeklyRows = await fetch(WEEKLY_SHEET_URL).then(r=>r.json()).catch(()=>[]);
   monthlyRows = await fetch(MONTHLY_FORM_URL).then(r=>r.json()).catch(()=>[]);
   console.log("Data loaded:", masterWeekly.length,"weekly,", masterMonthly.length,"monthly");
+  // <<< Nempel debug di sini
+  console.log("Data loaded:");
+  console.log("masterWeekly:", masterWeekly.length, masterWeekly);
+  console.log("weeklyRows:", weeklyRows.length, weeklyRows);
+  console.log("masterMonthly:", masterMonthly.length, masterMonthly);
+  console.log("monthlyRows:", monthlyRows.length, monthlyRows);
 }
 
 // ------------------
@@ -614,14 +619,10 @@ async function initApp() {
 // ------------------
 initApp();
 
-}
-
-
-
-
 </script>
 </body>
 </html>
+
 
 
 
