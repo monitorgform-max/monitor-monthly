@@ -76,6 +76,7 @@ header:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 12px r
 </div>
 
 <script>
+<script>
 // ------------------
 // State
 // ------------------
@@ -95,10 +96,14 @@ function resetWeekButtons() { weekBtns.forEach(b=>b.classList.remove("active"));
 // ------------------
 const MASTER_WEEKLY_CSV = "Data Mesin.csv"; 
 const MASTER_MONTHLY_CSV = "Data Mesin Monthly.csv"; 
+
+// WEEKLY
 const WEEKLY_SHEET_ID = "19FeEccnYkZVAZo0lO-erbgLtJDAalG3IzwaiLympdck";
 const WEEKLY_SHEET_NAME = "Form Responses 1";
 const WEEKLY_SHEET_URL = `https://opensheet.elk.sh/${WEEKLY_SHEET_ID}/${encodeURIComponent(WEEKLY_SHEET_NAME)}`;
-const MONTHLY_FORM_URL = "https://opensheet.elk.sh/19FeEccnYkZVAZo0lO-erbgLtJDAalG3IzwaiLympdck/Form%20Responses%201";
+
+// MONTHLY — URL BARU
+const MONTHLY_FORM_URL = "https://opensheet.elk.sh/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/Form%20Responses%201";
 
 // ------------------
 // Data
@@ -129,6 +134,7 @@ function renderWeekly(weekNumber){
     const targetWeek = `Week ${weekNumber}`;
     const list = masterWeekly.filter(m => safe(m.WEEK) === targetWeek);
     const sudahList = [], belumList = [];
+
     list.forEach(m=>{
         const id = safe(m["ID Mesin"]);
         const match = weeklyRows.find(r => safe(r["ID Mesin"]) === id && safe(r["WEEK"]) === targetWeek);
@@ -149,30 +155,37 @@ function renderWeekly(weekNumber){
 
     let html=`<h3>Sudah Input (${sudahList.length} mesin)</h3>`;
     const colSud = chunkInto(sudahList);
-    html+=`<div class="week-grid">`+colSud.map(col=>`
-        <div class="card sudah">${col.map(m=>`
+
+    html+=`<div class="week-grid">`+
+        colSud.map(col=>`
+        <div class="card sudah">
+            ${col.map(m=>`
             <div class="item">
                 <strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)}<br>
                 ${safe(m["Nama Lokasi"])}<br>
                 <small>${m.Timestamp}</small>
                 <span class="tooltip">Timestamp: ${m.Timestamp}</span>
-            </div>`).join('')}</div>`).join('')+`</div>`;
+            </div>`).join('')}
+        </div>`).join('')
+    +`</div>`;
 
     html+=`<h3>Belum Input (${belumList.length} mesin)</h3>`;
     const colBel = chunkInto(belumList);
-    html+=`<div class="week-grid">`+colBel.map(col=>`
-        <div class="card belum">${col.map(m=>`
+
+    html+=`<div class="week-grid">`+
+        colBel.map(col=>`
+        <div class="card belum">
+            ${col.map(m=>`
             <div class="item">
                 <strong>${safe(m["ID Mesin"])}</strong> — ${safe(m.SEKTOR)}<br>
                 ${safe(m["Nama Lokasi"])}
                 <span class="tooltip">Belum input</span>
-            </div>`).join('')}</div>`).join('')+`</div>`;
+            </div>`).join('')}
+        </div>`).join('')
+    +`</div>`;
 
     dataDisplay.innerHTML = html;
 }
-
-
-
 
 // ------------------
 // Render Monthly
@@ -187,10 +200,10 @@ function renderMonthly(){
         const match = monthlyRows.find(r => safe(r["ID Mesin"]) === id);
 
         if(match){
-            let tsRaw = safe(match.Timestamp).trim();
+            let tsRaw = safe(match.Timestamp);
             let ts = tsRaw;
-            const parsedDate = new Date(tsRaw);
-            if(!isNaN(parsedDate)) ts = parsedDate.toLocaleString('id-ID',{hour12:false});
+            const d = new Date(tsRaw);
+            if(!isNaN(d)) ts = d.toLocaleString("id-ID",{hour12:false});
             sudah.push({id,nama,sektor,ts});
         } else {
             belum.push({id,nama,sektor});
@@ -199,105 +212,109 @@ function renderMonthly(){
 
     function chunk(arr,n=4){
         const out = Array.from({length:n},()=>[]);
-        let idx=0;
-        const base = Math.floor(arr.length/n), rem = arr.length%n;
+        let idx=0; const base=Math.floor(arr.length/n), rem=arr.length%n;
         for(let i=0;i<n;i++){
-            const size = base + (i<rem?1:0);
-            out[i] = arr.slice(idx,idx+size);
+            const size=base+(i<rem?1:0);
+            out[i]=arr.slice(idx,idx+size);
             idx+=size;
         }
         return out;
     }
 
-    let html = `<h3>Sudah Input (${sudah.length} mesin)</h3>`;
-    html += `<div class="week-grid">` + chunk(sudah).map(col=>`
-        <div class="monthly-card sudah">${col.map(c=>`
+    let html=`<h3>Sudah Input (${sudah.length} mesin)</h3>`;
+    html+=`<div class="week-grid">`+
+      chunk(sudah).map(col=>`
+        <div class="monthly-card sudah">
+          ${col.map(c=>`
             <div class="item">
-                <strong>${c.id}</strong> — ${c.sektor}<br>
-                ${c.nama}<br>
-                <small>${c.ts}</small>
-                <span class="tooltip">Timestamp: ${c.ts}</span>
-            </div>`).join('')}</div>`).join('') + `</div>`;
+              <strong>${c.id}</strong> — ${c.sektor}<br>
+              ${c.nama}<br>
+              <small>${c.ts}</small>
+              <span class="tooltip">Timestamp: ${c.ts}</span>
+            </div>`).join("")}
+        </div>`).join("")
+    +`</div>`;
 
-    html += `<h3>Belum Input (${belum.length} mesin)</h3>`;
-    html += `<div class="week-grid">` + chunk(belum).map(col=>`
-        <div class="monthly-card belum">${col.map(c=>`
+    html+=`<h3>Belum Input (${belum.length} mesin)</h3>`;
+    html+=`<div class="week-grid">`+
+      chunk(belum).map(col=>`
+        <div class="monthly-card belum">
+          ${col.map(c=>`
             <div class="item">
-                <strong>${c.id}</strong> — ${c.sektor}<br>
-                ${c.nama}
-                <span class="tooltip">Belum input</span>
-            </div>`).join('')}</div>`).join('') + `</div>`;
+              <strong>${c.id}</strong> — ${c.sektor}<br>
+              ${c.nama}
+              <span class="tooltip">Belum input</span>
+            </div>`).join("")}
+        </div>`).join("")
+    +`</div>`;
 
     dataDisplay.innerHTML = html;
 }
 
-
-
 // ------------------
-// Buttons
-// ------------------
-// ------------------
-// Button Logic Monthly
+// Button Monthly
 // ------------------
 btnMonthly.addEventListener("click", async ()=>{
-    resetMainButtons(); 
+    resetMainButtons();
     btnMonthly.classList.add("active");
     weekButtons.style.display="none";
 
-    // tampil loading sementara
     dataDisplay.innerHTML = "<div class='card'>Loading monthly data…</div>";
 
-    // --- Load master CSV monthly ---
     masterMonthly = await loadCSV(MASTER_MONTHLY_CSV);
+    monthlyRows = await fetch(MONTHLY_FORM_URL).then(r=>r.json()).catch(()=>[]);
 
-    // --- Fetch sheet monthly (sheet ID baru) ---
-    const MONTHLY_FORM_URL = "https://opensheet.elk.sh/134suRLzzkA8d7G_I9k535R-hlA_IpYvV67MgTQ8HlKw/Form%20Responses%201";
-    monthlyRows = await fetch(MONTHLY_FORM_URL)
-        .then(r => r.json())
-        .catch(e => {
-            console.error("Gagal fetch monthly sheet:", e);
-            return [];
-        });
-
-    console.log("masterMonthly length:", masterMonthly.length);
-    console.log("monthlyRows length:", monthlyRows.length);
-    console.log("monthlyRows sample:", monthlyRows.slice(0,5));
-
-    // --- Render monthly ---
     renderMonthly();
 });
-  
+
+// ------------------
+// Button Weekly
+// ------------------
 btnWeekly.addEventListener("click", async ()=>{
-  resetMainButtons(); btnWeekly.classList.add("active");
-  weekButtons.style.display="flex";
-  dataDisplay.innerHTML="<div class='card'>Loading weekly data…</div>";
-  resetWeekButtons();
-  if(masterWeekly.length===0 || weeklyRows.length===0) await loadAll();
-  dataDisplay.innerHTML="<div class='card'>Pilih week untuk melihat data</div>";
+    resetMainButtons();
+    btnWeekly.classList.add("active");
+    weekButtons.style.display="flex";
+    dataDisplay.innerHTML="<div class='card'>Loading weekly data…</div>";
+
+    resetWeekButtons();
+    if(masterWeekly.length===0 || weeklyRows.length===0) await loadAll();
+
+    dataDisplay.innerHTML="<div class='card'>Pilih week untuk melihat data</div>";
 });
 
+// Week buttons
 weekBtns.forEach(b=>{
-  b.addEventListener("click", async ()=>{
-    resetWeekButtons(); b.classList.add("active");
-    dataDisplay.innerHTML="<div class='card'>Loading week "+b.dataset.week+"…</div>";
-    if(masterWeekly.length===0 || weeklyRows.length===0) await loadAll();
-    renderWeekly(b.dataset.week);
-  });
+    b.addEventListener("click", async ()=>{
+        resetWeekButtons();
+        b.classList.add("active");
+        dataDisplay.innerHTML="<div class='card'>Loading week "+b.dataset.week+"…</div>";
 
+        if(masterWeekly.length===0 || weeklyRows.length===0) await loadAll();
 
+        renderWeekly(b.dataset.week);
+    });
+}); // ← FIX KURUNG DI SINI
 
+// ------------------
+// Refresh
+// ------------------
 btnRefresh.addEventListener("click", async ()=>{
-  resetMainButtons(); btnRefresh.classList.add("active");
-  dataDisplay.innerHTML="<div class='card'>Refresh…</div>";
-  await loadAll();
-  dataDisplay.innerHTML="<div class='card'>Data terbaru sudah dimuat.</div>";
+    resetMainButtons();
+    btnRefresh.classList.add("active");
+    dataDisplay.innerHTML="<div class='card'>Refresh…</div>";
+    await loadAll();
+    dataDisplay.innerHTML="<div class='card'>Data terbaru sudah dimuat.</div>";
 });
 
 // Initial load
 loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Klik Weekly atau Monthly untuk mulai</div>");
+
+</script>
+
 </script>
 </body>
 </html>
+
 
 
 
