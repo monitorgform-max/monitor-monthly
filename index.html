@@ -270,7 +270,12 @@ weekBtns.forEach(b=>{
     renderWeekly(b.dataset.week);
   });
 });
+btnMonthly.addEventListener("click", async ()=>{
+    resetMainButtons(); 
+    btnMonthly.classList.add("active");
+    weekButtons.style.display="none";
 
+    dataDisplay.innerHTML = "<div class='card'>Loading monthly data…</div>";
 
 
 btnRefresh.addEventListener("click", async ()=>{
@@ -285,6 +290,7 @@ loadAll().then(()=>dataDisplay.innerHTML="<div class='card'>Klik Weekly atau Mon
 </script>
 </body>
 </html>
+
 
 
 
